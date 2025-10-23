@@ -1,0 +1,65 @@
+Sungrow SG33CX-P2: $2400.00
+Sungrow SG40CX-P2: $2640.00
+Sungrow SG50CX-P2: $3000.00
+Sungrow SG125CX-P2: $6120.00
+Sungrow SG150CX: $6900.00
+Sungrow 250KW: $8400.00
+COM100E: $720.00
+Weidmuller Smart Meter: $1200.00
+WiNet-S2: $336.00
+EYEMA WiFi: $336.00
+Acrel Smart Meter: $276.00
+Solis Ongrid Inverter 5kw: $559.20
+Solis Ongrid Inverter 10kw: $1248.00
+Solis Ongrid Inverter 20kw: $1572.00
+Solis Ongrid Inverter 40kw: $2496.00
+LV 100AH 12V GEL: $111.60
+LV 150AH 12V GEL BATTERY: $174.00
+LV 200AH 12V GEL BATTERY: $228.00
+LV 250AH 12V GEL BATTERY: $282.00
+3DPC5.2-50-48-600W: $162.00
+4DPC9-45-110-750W: $198.00
+3DPC6-84-110-1100W: $198.00
+4DPC9-85-110-1500W: $210.00
+4DSC19-60-300-2200W: $312.00
+4DSC19-98-380/550-3000W: $408.00
+4DSC19-135-380/550-4000W: $462.00
+DCPM21-14-72-750W: $204.00
+DCPM50-17-110-1500W: $246.00
+DCPM60-20-300-2200W-A/D: $312.00
+Lvtopsun 340W: $44.40
+Lvtopsun 550W: $66.00
+Lvtopsun 620W: $79.20
+LONGi Panel 360w: $46.80
+LONGi Panel 585w: $99.60
+Deye Hybrid 5kw EU 1P: $888.00
+Deye Hybrid 8kw EU 1P: $1320.00
+Deye 16kw EP 1P: $2412.00
+Deye 10kw eu 1P Low Voltage: $1800.00
+Deye 10kw eu 3P Low Voltage: $2004.00
+Deye 12kw eu 3P Low Voltage: $2100.00
+Deye 20kw eu 3P Low Voltage: $3096.00
+Deye 20kw eu 3P High Voltage: $2220.00
+Deye 30kw eu 3p: $4080.00
+Deye 40kw eu 3p: $4800.00
+Deye 50kw eu 3p: $5280.00
+DEYE 100AH 51.2v (5.12KWH): $1440.00
+DEYE Battery Controller: $1080.00
+DEYE Battery Rack (8+1): $288.00
+DEYE Battery Rack (12+1): $324.00
+LVtopsun-51.2V100AH Lithium: $684.00
+LVtopsun-51.2V200AH Lithium: $1260.00
+LVtopsun-51.2V300AH Lithium: $1440.00
+LVtopsun-51.2V100AH Lithium HV: $780.00
+LVtopsun-51.2V100A Controller: $1080.00
+LV 4mm PV CABLE 100M: $64.80
+LV 6mm PV CABLE 100M: $98.40
+LV Off Grid 3KW: $276.00
+LV off grid 5kw inverter: $468.00
+LV 11kw inverter: $1116.00
+Luxpower 6kw inverter: $516.00
+Rail 4.8m: $19.20
+Mid clamp: $0.60
+End Clamp: $0.60
+Rail connector: $0.84
+L feet: $1.32

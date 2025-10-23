@@ -1,0 +1,86 @@
+╔═══════════════════════════════════════════════════════════════╗
+║                  🌞 KHSOLAR TELEGRAM BOT                      ║
+║                     QUICK REFERENCE                           ║
+╚═══════════════════════════════════════════════════════════════╝
+
+📱 BOT INFORMATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Bot Name:      KHSolar Bot
+  Username:      @khsolar_bot
+  Direct Link:   https://t.me/khsolar_bot
+  Token:         8258016332:AAFdR7b4y-BPzM-CdIpIMLnF2-8SFESQz1g
+
+🚀 QUICK START (3 Commands)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  1. pip install python-telegram-bot==20.7 python-dotenv
+  2. python bot_server.py
+  3. Open https://t.me/khsolar_bot
+
+✅ TESTING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Test Setup:    python test_telegram.py
+  Start Server:  python bot_server.py
+  Start App:     streamlit run app.py
+  Check Users:   python telegram_bot.py
+
+📤 CUSTOMER FLOW
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  1. Customer opens: https://t.me/khsolar_bot
+  2. Customer clicks: START
+  3. You enter their Telegram username in app
+  4. You click: "📤 Send Report to Telegram"
+  5. Customer receives instant report!
+
+💡 SHARE WITH CUSTOMERS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Link:     https://t.me/khsolar_bot
+  Username: @khsolar_bot
+  Message:  "Get your solar report instantly on Telegram!"
+
+📚 DOCUMENTATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  ★ START_HERE.md                  - Overview (READ FIRST!)
+  → TELEGRAM_README.md             - Quick setup guide
+  → BOT_INFO.md                    - Marketing & details
+  → TELEGRAM_SETUP_INSTRUCTIONS.md - Detailed technical
+  → CUSTOMER_TELEGRAM_GUIDE.md     - For your customers
+
+🔧 BOT COMMANDS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  /start  - Register user
+  /status - Check registration
+  /help   - Show help
+  /users  - List all users (admin)
+
+🐛 TROUBLESHOOTING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Problem: "User hasn't started conversation"
+  Fix:     Customer must send /start first
+
+  Problem: "Module not found"
+  Fix:     pip install python-telegram-bot==20.7
+
+  Problem: Bot doesn't respond
+  Fix:     Make sure bot_server.py is running
+
+  Problem: Can't find bot
+  Fix:     Use direct link: https://t.me/khsolar_bot
+
+🔒 SECURITY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  ✓ Token in .env file (secure)
+  ✓ .env in .gitignore (protected)
+  ✓ Share bot link freely
+  ✗ Never share token publicly
+
+📞 SUPPORT LINKS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Your Bot:       https://t.me/khsolar_bot
+  BotFather:      https://t.me/BotFather
+  Bot Support:    https://t.me/BotSupport
+  API Docs:       https://core.telegram.org/bots/api
+
+╔═══════════════════════════════════════════════════════════════╗
+║  STATUS: ✅ READY TO USE                                      ║
+║  NEXT: Read START_HERE.md                                     ║
+╚═══════════════════════════════════════════════════════════════╝

@@ -1,0 +1,140 @@
+
+Ultimate Solar Planning & Business Software Roadmap (Final Enhanced Version)
+
+1. Software Goal
+- Plan, simulate, and optimize hybrid solar systems for homes.
+- Support Khmer household usage patterns, realistic device usage, and night/day simulation.
+- Include business/product management, cost calculation, and ROI analysis.
+- Provide interactive, AI-driven recommendations, real-time monitoring, and reporting.
+
+2. Input Module (Multiple Options)
+- Device-based: name, power (W), daily usage hours.
+- Monthly usage: total kWh/month → converts to daily average.
+- System specifications: PV panels, inverter, battery capacity.
+- Hybrid input: any combination of above.
+- Location: sunlight hours adjustment.
+- Optional: historical electricity data for AI prediction.
+
+3. Product & Cost Management (Business Feature)
+- Add products (PV, inverter, battery, smart devices).
+- Enter cost, warranty, supplier info.
+- Calculate total system cost, ROI, payback period.
+- Compare different product combinations.
+- Generate quotes/proposals for customers.
+- Multi-currency and bulk pricing support.
+
+4. Calculation Modules
+- PV Array Sizing: based on load and sunlight hours.
+- Battery Sizing: based on night load and desired autonomy.
+- Load Analysis: total daily energy, day/night split, priority devices.
+- Financial Calculation: cost, ROI, payback, subsidies or incentives.
+
+5. Hourly Simulation Module
+- PV → load → battery → grid energy flow per hour.
+- Battery state-of-charge (SoC) tracking.
+- Sunlight curve adjustment for seasonal/monthly variation.
+- Energy surplus/deficit prediction.
+- Scenario simulation for new devices or system specs.
+
+6. Device Scheduling & Advice Module
+- Optimal device running hours recommended.
+- AI-based energy efficiency recommendations.
+- Alerts if load exceeds PV/battery capacity.
+- User override and scenario simulation.
+- Priority devices: essential vs optional.
+- Scenario management: save and compare multiple device schedules.
+
+7. Visualization & Reporting
+- Daily/weekly/monthly summary: PV production, load, battery, grid usage.
+- 24-hour graphs: energy flow visualization.
+- Device usage table & schedule recommendations.
+- 3D PV layout for roof installation planning.
+- Export: PDF, Excel, CSV, printable device schedules.
+- ROI and payback visualization charts.
+
+8. Rich / Advanced Features
+- AI-based load prediction & adaptive advice.
+- Smart device/IoT integration for automatic load balancing.
+- Real-time monitoring of PV and battery.
+- Weather forecast integration for solar generation prediction.
+- Maintenance and lifecycle tracking for PV, inverter, battery.
+- Sustainability metrics: CO₂ reduction, environmental impact.
+- Multi-home / multi-building management.
+- Gamification: track energy savings achievements.
+- Cloud access and multi-device support.
+- Voice assistant integration (Google Home / Alexa).
+- Educational mode: explain energy savings, solar principles, environmental impact.
+
+9. User Interface & Interaction
+- Modern dashboard with summary widgets (PV output, battery SoC, current load, savings).
+- Drag-and-drop device scheduling with tooltips.
+- Interactive 24-hour timeline (battery, PV, load).
+- Color-coded alerts: red (deficit), yellow (battery low), green (PV sufficient).
+- Dark/light mode.
+- Mobile-friendly responsive design.
+- Multi-language support (Khmer/English).
+
+10. Development Flowchart (Conceptual)
+START
+  │
+  ▼
+INPUT MODULE
+  ├─ Device / Monthly / System / Hybrid
+  ├─ Location & Sunlight
+  └─ Historical data (optional)
+  │
+  ▼
+PRODUCT & COST MANAGEMENT
+  ├─ Add PV, inverter, battery, smart devices
+  ├─ Enter cost, warranty, supplier
+  └─ Calculate total system cost, ROI, payback
+  │
+  ▼
+CALCULATION MODULES
+  ├─ PV Sizing
+  ├─ Battery Sizing
+  ├─ Load Analysis
+  └─ Financial Calculation
+  │
+  ▼
+HOURLY SIMULATION
+  ├─ PV → Load
+  ├─ PV → Battery
+  ├─ Battery → Load
+  └─ Grid → Load if necessary
+  │
+  ▼
+DEVICE SCHEDULING & ADVICE
+  ├─ AI-based recommendations
+  ├─ Alerts if load > capacity
+  └─ User override / scenario simulation
+  │
+  ▼
+OUTPUT & VISUALIZATION
+  ├─ Daily / monthly summary
+  ├─ 24h energy graph
+  ├─ Device timeline
+  ├─ 3D PV layout
+  └─ Multi-scenario comparison
+  │
+  ▼
+ADVANCED / RICH FEATURES
+  ├─ Smart device integration & load balancing
+  ├─ Cloud & multi-user support
+  ├─ Maintenance & lifecycle tracking
+  ├─ Sustainability metrics (CO₂ reduction)
+  ├─ Gamification & engagement
+  └─ Educational mode
+  │
+  ▼
+EXPORT & REPORTING
+  ├─ PDF / Excel / CSV
+  └─ Printable device schedules / cost proposal
+  │
+  ▼
+END → Recommendations + Business Analysis generated
+
+Notes:
+- All features from our conversation are included.
+- Rich makeup includes UI/UX polish, gamification, educational mode, scenario management, multi-currency, cloud, AI predictions, IoT integration.
+- Business-ready: product catalog, cost calculation, quotes, ROI, and payback.

@@ -1,0 +1,1065 @@
+"""
+Ultimate Solar Planning & Business Software - Main Application
+"""
+import streamlit as st
+import pandas as pd
+from models import Device, SystemConfiguration, SolarPanel, Battery, Inverter
+from calculations import SolarCalculator
+from product_manager import ProductManager
+from visualization import SolarVisualizer
+from export_utils import ReportExporter
+
+# Page config
+st.set_page_config(page_title="Solar Planning Software", page_icon="☀️", layout="wide")
+
+# Custom CSS for Modern UI
+st.markdown("""
+<style>
+    /* Main Container */
+    .main {
+        padding: 1rem 2rem;
+    }
+    
+    /* Enhanced Metric Cards */
+    .stMetric {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        padding: 20px;
+        border-radius: 15px;
+        box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        color: white !important;
+    }
+    
+    .stMetric:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 24px rgba(0,0,0,0.2);
+    }
+    
+    .stMetric label {
+        color: rgba(255,255,255,0.9) !important;
+        font-weight: 600 !important;
+        font-size: 0.9rem !important;
+    }
+    
+    .stMetric [data-testid="stMetricValue"] {
+        color: white !important;
+        font-size: 2rem !important;
+        font-weight: 700 !important;
+    }
+    
+    /* Headers */
+    h1 {
+        color: #1e3a8a;
+        font-size: 2.5rem;
+        font-weight: 800;
+        padding-bottom: 15px;
+        border-bottom: 4px solid #3b82f6;
+        background: linear-gradient(90deg, #1e3a8a 0%, #3b82f6 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-bottom: 2rem;
+    }
+    
+    h2 {
+        color: #1e40af;
+        font-weight: 700;
+        margin-top: 2rem;
+        margin-bottom: 1rem;
+    }
+    
+    h3 {
+        color: #2563eb;
+        font-weight: 600;
+    }
+    
+    /* Buttons */
+    .stButton>button {
+        border-radius: 10px;
+        padding: 0.6rem 2rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        border: none;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    
+    .stButton>button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+    }
+    
+    /* Primary Button */
+    .stButton>button[kind="primary"] {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    
+    /* Input Fields */
+    .stTextInput>div>div>input,
+    .stNumberInput>div>div>input,
+    .stSelectbox>div>div {
+        border-radius: 8px;
+        border: 2px solid #e5e7eb;
+        transition: border-color 0.3s ease;
+    }
+    
+    .stTextInput>div>div>input:focus,
+    .stNumberInput>div>div>input:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+    }
+    
+    /* Tabs */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 8px;
+        background-color: #f8fafc;
+        padding: 10px;
+        border-radius: 10px;
+    }
+    
+    .stTabs [data-baseweb="tab"] {
+        border-radius: 8px;
+        padding: 10px 20px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    
+    .stTabs [aria-selected="true"] {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+    
+    /* Info/Warning/Success Boxes */
+    .stAlert {
+        border-radius: 10px;
+        border-left-width: 4px;
+        padding: 1rem 1.5rem;
+        animation: slideIn 0.3s ease;
+    }
+    
+    @keyframes slideIn {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    /* Dataframes */
+    .stDataFrame {
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    
+    /* Sidebar */
+    .css-1d391kg {
+        background: linear-gradient(180deg, #1e3a8a 0%, #1e40af 100%);
+    }
+    
+    .css-1d391kg .stRadio>label {
+        color: white !important;
+        font-weight: 600;
+    }
+    
+    /* Expander */
+    .streamlit-expanderHeader {
+        border-radius: 8px;
+        background-color: #f8fafc;
+        font-weight: 600;
+        transition: background-color 0.3s ease;
+    }
+    
+    .streamlit-expanderHeader:hover {
+        background-color: #e0e7ff;
+    }
+    
+    /* Progress Bar */
+    .stProgress > div > div > div {
+        background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+        border-radius: 10px;
+    }
+    
+    /* Checkbox */
+    .stCheckbox {
+        padding: 5px 0;
+    }
+    
+    /* Custom Cards */
+    .custom-card {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 15px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        border-left: 4px solid #3b82f6;
+        margin: 1rem 0;
+        transition: all 0.3s ease;
+    }
+    
+    .custom-card:hover {
+        box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+        transform: translateX(5px);
+    }
+    
+    /* Success Box */
+    .success-box {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        padding: 1.5rem;
+        border-radius: 12px;
+        margin: 1rem 0;
+        box-shadow: 0 4px 12px rgba(16,185,129,0.3);
+    }
+    
+    /* Warning Box */
+    .warning-box {
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        color: white;
+        padding: 1.5rem;
+        border-radius: 12px;
+        margin: 1rem 0;
+        box-shadow: 0 4px 12px rgba(245,158,11,0.3);
+    }
+    
+    /* Info Box */
+    .info-box {
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+        color: white;
+        padding: 1.5rem;
+        border-radius: 12px;
+        margin: 1rem 0;
+        box-shadow: 0 4px 12px rgba(59,130,246,0.3);
+    }
+    
+    /* Fade-in animation */
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+    
+    .fade-in {
+        animation: fadeIn 0.5s ease-in;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+# Device Database for Auto-Recognition
+DEVICE_DATABASE = {
+    # Cooling (inverter available for AC and refrigerators)
+    "Refrigerator": {"power": 150, "hours": 24, "type": "cooling", "priority": True, "inverter": False},
+    "Refrigerator (Inverter)": {"power": 150, "hours": 24, "type": "cooling", "priority": True, "inverter": True},
+    "Freezer": {"power": 200, "hours": 24, "type": "cooling", "priority": True, "inverter": False},
+    "Freezer (Inverter)": {"power": 200, "hours": 24, "type": "cooling", "priority": True, "inverter": True},
+    "Air Conditioner 1HP": {"power": 1000, "hours": 8, "type": "cooling", "priority": False, "inverter": False},
+    "Air Conditioner 1HP (Inverter)": {"power": 1000, "hours": 8, "type": "cooling", "priority": False, "inverter": True},
+    "Air Conditioner 1.5HP": {"power": 1500, "hours": 8, "type": "cooling", "priority": False, "inverter": False},
+    "Air Conditioner 1.5HP (Inverter)": {"power": 1500, "hours": 8, "type": "cooling", "priority": False, "inverter": True},
+    "Air Conditioner 2HP": {"power": 2000, "hours": 8, "type": "cooling", "priority": False, "inverter": False},
+    "Air Conditioner 2HP (Inverter)": {"power": 2000, "hours": 8, "type": "cooling", "priority": False, "inverter": True},
+    "Ceiling Fan": {"power": 75, "hours": 10, "type": "cooling", "priority": False, "inverter": False},
+    "Standing Fan": {"power": 60, "hours": 8, "type": "cooling", "priority": False, "inverter": False},
+    "Table Fan": {"power": 50, "hours": 6, "type": "cooling", "priority": False, "inverter": False},
+    
+    # Lighting
+    "LED Bulb 9W": {"power": 9, "hours": 5, "type": "lighting", "priority": True},
+    "LED Bulb 12W": {"power": 12, "hours": 5, "type": "lighting", "priority": True},
+    "LED Tube 18W": {"power": 18, "hours": 5, "type": "lighting", "priority": True},
+    "CFL Bulb 20W": {"power": 20, "hours": 5, "type": "lighting", "priority": False},
+    "LED Strip Lights": {"power": 30, "hours": 4, "type": "lighting", "priority": False},
+    
+    # Kitchen
+    "Rice Cooker": {"power": 500, "hours": 1, "type": "kitchen", "priority": True},
+    "Electric Stove": {"power": 2000, "hours": 1.5, "type": "kitchen", "priority": False},
+    "Microwave": {"power": 1000, "hours": 0.3, "type": "kitchen", "priority": False},
+    "Toaster": {"power": 800, "hours": 0.2, "type": "kitchen", "priority": False},
+    "Electric Kettle": {"power": 1500, "hours": 0.3, "type": "kitchen", "priority": False},
+    "Blender": {"power": 300, "hours": 0.2, "type": "kitchen", "priority": False},
+    "Coffee Maker": {"power": 800, "hours": 0.5, "type": "kitchen", "priority": False},
+    
+    # Entertainment
+    "TV LED 32 inch": {"power": 60, "hours": 4, "type": "entertainment", "priority": False},
+    "TV LED 43 inch": {"power": 80, "hours": 4, "type": "entertainment", "priority": False},
+    "TV LED 55 inch": {"power": 120, "hours": 4, "type": "entertainment", "priority": False},
+    "Sound System": {"power": 100, "hours": 3, "type": "entertainment", "priority": False},
+    "Gaming Console": {"power": 150, "hours": 3, "type": "entertainment", "priority": False},
+    
+    # Office/Computing
+    "Desktop Computer": {"power": 300, "hours": 6, "type": "office", "priority": False},
+    "Laptop": {"power": 65, "hours": 6, "type": "office", "priority": False},
+    "Monitor": {"power": 40, "hours": 6, "type": "office", "priority": False},
+    "Printer": {"power": 50, "hours": 0.5, "type": "office", "priority": False},
+    "Router/Modem": {"power": 10, "hours": 24, "type": "office", "priority": True},
+    
+    # General Appliances (inverter available for washing machine)
+    "Washing Machine": {"power": 500, "hours": 1, "type": "general", "priority": False, "inverter": False},
+    "Washing Machine (Inverter)": {"power": 500, "hours": 1, "type": "general", "priority": False, "inverter": True},
+    "Iron": {"power": 1000, "hours": 0.5, "type": "general", "priority": False, "inverter": False},
+    "Vacuum Cleaner": {"power": 1000, "hours": 0.5, "type": "general", "priority": False, "inverter": False},
+    "Water Pump": {"power": 300, "hours": 0.5, "type": "general", "priority": True, "inverter": False},
+    "Water Heater": {"power": 2000, "hours": 1, "type": "heating", "priority": False, "inverter": False},
+    "Water Heater (Inverter)": {"power": 2000, "hours": 1, "type": "heating", "priority": False, "inverter": True},
+    "Hair Dryer": {"power": 1500, "hours": 0.2, "type": "general", "priority": False, "inverter": False},
+}
+
+# Khmer Translation Dictionary
+TRANSLATIONS = {
+    'en': {
+        # Navigation
+        'nav_title': '☀️ Solar Planning',
+        'nav_dashboard': '🏠 Dashboard',
+        'nav_devices': '⚡ Devices',
+        'nav_system': '🔧 System Config',
+        'nav_products': '🛒 Products',
+        'nav_simulation': '📊 Simulation',
+        'nav_reports': '📈 Reports',
+        
+        # Dashboard
+        'dash_title': '☀️ Solar Planning & Business Software',
+        'dash_subtitle': 'Comprehensive Solar System Design for Khmer Households & Businesses',
+        'customer_info': '👤 Customer Information',
+        'customer_required': '👤 Customer Information Required',
+        'customer_required_msg': 'Please add customer details to identify this project',
+        'enter_customer_info': '📝 Enter Customer Information',
+        'customer_name': 'Customer Name',
+        'company_name': 'Company/Business Name',
+        'phone_number': 'Phone Number',
+        'telegram_username': 'Telegram Username',
+        'email_address': 'Email Address',
+        'address': 'Address',
+        'save_customer_info': '💾 Save Customer Information',
+        'edit_info': '✏️ Edit Info',
+        'contact_details': '📞 Contact Details',
+        'total_devices': '⚡ Total Devices',
+        'daily_consumption': '🔋 Daily Consumption',
+        'system_cost': '💰 System Cost',
+        'self_sufficiency': '🎯 Self Sufficiency',
+        
+        # Devices
+        'device_management': '⚡ Device Management',
+        'device_subtitle': 'Manage your household and business electrical devices',
+        'add_device': '➕ Add Device',
+        'device_list': '📋 Device List',
+        'quick_add': '🎯 Quick Add',
+        'device_name': 'Device Name',
+        'power_consumption': 'Power Consumption (W)',
+        'daily_usage_hours': 'Daily Usage Hours',
+        'device_category': 'Device Category',
+        'priority_device': '⭐ Priority Device (Essential)',
+        'inverter_tech': '⚡ Smart Inverter Technology',
+        'quantity': 'Quantity',
+        'add_devices': '➕ Add Device(s)',
+        
+        # System Config
+        'system_config': '🔧 System Configuration',
+        'system_subtitle': 'Configure your solar system or use auto-recommendations based on your devices',
+        'auto_recommendations': '🤖 Auto-Calculated Recommendations',
+        'based_on_devices': 'Based on {} devices with {:.2f} kWh/day load',
+        'solar_panels': '☀️ Solar Panels',
+        'battery': '🔋 Battery',
+        'inverter': '⚡ Inverter',
+        'recommended': '📊 Recommended',
+        'auto_fill': '🤖 Auto-Fill Recommended Values',
+        'solar_config': '☀️ Solar Panel Configuration',
+        'battery_config': '🔋 Battery Configuration',
+        'inverter_config': '⚡ Inverter Configuration',
+        'panel_model': 'Panel Model',
+        'power_per_panel': 'Power per Panel (W)',
+        'total_capacity': 'Total Capacity',
+        'total_cost': 'Total Cost',
+        'battery_model': 'Battery Model',
+        'capacity_kwh': 'Capacity (kWh)',
+        'voltage': 'Voltage (V)',
+        'inverter_model': 'Inverter Model',
+        'power_rating': 'Power Rating (kW)',
+        'save_config': '💾 Save {} Configuration',
+        'optimal_sizing': '✅ Optimal sizing',
+        
+        # Simulation
+        'simulation_title': '📊 24-Hour Simulation & Analysis',
+        'simulation_subtitle': 'Analyze your solar system\'s performance over 24 hours',
+        'customer_project': '👤 Customer Project',
+        'run_simulation': '▶️ Run 24-Hour Simulation',
+        'simulation_results': '📈 Simulation Results',
+        'kpi': '⚡ Key Performance Indicators',
+        'pv_generation': '☀️ PV Generation',
+        'total_load': '🔌 Total Load',
+        'grid_import': '🔗 Grid Import',
+        'energy_flow': '📊 24-Hour Energy Flow',
+        'system_insights': '💡 System Insights',
+        'battery_performance': '🔋 Battery Performance',
+        'solar_performance': '☀️ Solar Performance',
+        'energy_economics': '💰 Energy Economics',
+        
+        # Reports
+        'reports_title': '📈 Export Reports',
+        'customer_report': '👤 Customer Report',
+        'download_reports': '📥 Download Reports',
+        'export_excel': '📊 Export to Excel',
+        'export_csv': '📄 Export to CSV',
+        'export_pdf': '📕 Export to PDF',
+        
+        # Messages
+        'customer_saved': '✅ Customer information saved for {}',
+        'enter_name_phone': '⚠️ Please enter at least Customer Name and Phone Number',
+        'successfully_added': '✅ Successfully added **{}x {}**{} - {:.2f} kWh/day{}',
+        'enter_device_name': '⚠️ Please enter a device name',
+        'removed_device': 'Removed {}',
+        'added_small_home': '✅ Added Small Home setup (14 devices)',
+        'added_medium_home': '✅ Added Medium Home setup (26 devices)',
+        'added_large_home': '✅ Added Large Home setup (40 devices)',
+        'device_exists': '⚠️ {} already exists',
+        'added_device': '✅ Added {}',
+        'add_devices_first': '⚠️ Add devices first to get auto-calculated recommendations',
+        'above_recommended': 'ℹ️ {:.1f} {} above recommended ({})',
+        'below_recommended': '⚠️ {:.1f} {} below recommended',
+        'config_saved': '✅ {} configured successfully!',
+        'simulation_complete': '🎉 Simulation completed successfully!',
+        'run_simulation_first': '⚠️ Run a simulation first',
+        'exported_to': '✅ Exported to {}',
+        'with_inverter': ' with Inverter Technology',
+        'saves_kwh': ' (Saves {:.2f} kWh/day)',
+        'good_for_growth': 'good for growth',
+        'extra_backup': 'extra backup',
+        'good_headroom': 'good headroom',
+        
+        # Labels in HTML
+        'na': 'N/A',
+        'not_set': 'Not Set',
+        'active': 'Active',
+        'estimated': 'Estimated',
+        'example': 'Example',
+        'purpose': 'Purpose',
+        'peak_load': 'Peak Load',
+        'margin': 'margin',
+        'continuous': 'continuous',
+        'max_output': 'Max Output',
+        'usable_energy': 'Usable Energy',
+        'dod': 'DoD',
+        'per_panel': '/Panel',
+        'month': '/month',
+        'excellent': 'Excellent',
+        'good': 'Good',
+        'low': 'Low',
+        'moderate': 'Moderate',
+        'kw': 'kW',
+        'kwh': 'kWh',
+        'small_home': 'Small Home',
+        'medium_home': 'Medium Home',
+        'large_home': 'Large Home',
+        'bedrooms': 'bedrooms',
+        'people': 'people',
+        'devices_count': 'devices',
+        
+        # Common
+        'save': 'Save',
+        'cancel': 'Cancel',
+        'success': 'Success',
+        'error': 'Error',
+        'warning': 'Warning',
+        'company': 'Company',
+        'phone': 'Phone',
+        'telegram': 'Telegram',
+        'email': 'Email',
+        'cost': 'Cost',
+        'status': 'Status',
+        'not_configured': 'Not configured',
+        'configured': 'Configured',
+        'customer': 'Customer',
+    },
+    'kh': {
+        # Navigation
+        'nav_title': '☀️ ការគ្រប់គ្រងថាមពលពន្លឺព្រះអាទិត្យ',
+        'nav_dashboard': '🏠 ផ្ទាំងគ្រប់គ្រង',
+        'nav_devices': '⚡ ឧបករណ៍',
+        'nav_system': '🔧 ការកំណត់ប្រព័ន្ធ',
+        'nav_products': '🛒 ផលិតផល',
+        'nav_simulation': '📊 ការវិភាគ',
+        'nav_reports': '📈 របាយការណ៍',
+        
+        # Dashboard
+        'dash_title': '☀️ កម្មវិធីគ្រប់គ្រងថាមពលពន្លឺព្រះអាទិត្យ',
+        'dash_subtitle': 'ការរចនាប្រព័ន្ធថាមពលពន្លឺព្រះអាទិត្យសម្រាប់គ្រួសារ និងអាជីវកម្មខ្មែរ',
+        'customer_info': '👤 ព័ត៌មានអតិថិជន',
+        'customer_required': '👤 ត្រូវការព័ត៌មានអតិថិជន',
+        'customer_required_msg': 'សូមបញ្ចូលព័ត៌មានអតិថិជន ដើម្បីកំណត់គម្រោងនេះ',
+        'enter_customer_info': '📝 បញ្ចូលព័ត៌មានអតិថិជន',
+        'customer_name': 'ឈ្មោះអតិថិជន',
+        'company_name': 'ឈ្មោះក្រុមហ៊ុន/អាជីវកម្ម',
+        'phone_number': 'លេខទូរស័ព្ទ',
+        'telegram_username': 'គណនី Telegram',
+        'email_address': 'អ៊ីមែល',
+        'address': 'អាសយដ្ឋាន',
+        'save_customer_info': '💾 រក្សាទុកព័ត៌មានអតិថិជន',
+        'edit_info': '✏️ កែសម្រួល',
+        'contact_details': '📞 ព័ត៌មានទំនាក់ទំនង',
+        'total_devices': '⚡ ឧបករណ៍សរុប',
+        'daily_consumption': '🔋 ការប្រើប្រាស់ប្រចាំថ្ងៃ',
+        'system_cost': '💰 តម្លៃប្រព័ន្ធ',
+        'self_sufficiency': '🎯 ភាពឯករាជ្យ',
+        
+        # Devices
+        'device_management': '⚡ ការគ្រប់គ្រងឧបករណ៍',
+        'device_subtitle': 'គ្រប់គ្រងឧបករណ៍អគ្គិសនីក្នុងផ្ទះ និងអាជីវកម្មរបស់អ្នក',
+        'add_device': '➕ បន្ថែមឧបករណ៍',
+        'device_list': '📋 បញ្ជីឧបករណ៍',
+        'quick_add': '🎯 បន្ថែមរហ័ស',
+        'device_name': 'ឈ្មោះឧបករណ៍',
+        'power_consumption': 'ការប្រើថាមពល (វ៉ាត់)',
+        'daily_usage_hours': 'ម៉ោងប្រើប្រាស់ក្នុងមួយថ្ងៃ',
+        'device_category': 'ប្រភេទឧបករណ៍',
+        'priority_device': '⭐ ឧបករណ៍អាទិភាព (សំខាន់)',
+        'inverter_tech': '⚡ បច្ចេកវិទ្យា Inverter ឆ្លាតវៃ',
+        'quantity': 'បរិមាណ',
+        'add_devices': '➕ បន្ថែមឧបករណ៍',
+        
+        # System Config
+        'system_config': '🔧 ការកំណត់ប្រព័ន្ធ',
+        'system_subtitle': 'កំណត់ប្រព័ន្ធថាមពលពន្លឺព្រះអាទិត្យ ឬប្រើការណែនាំស្វ័យប្រវត្តិតាមឧបករណ៍របស់អ្នក',
+        'auto_recommendations': '🤖 ការណែនាំគណនាស្វ័យប្រវត្តិ',
+        'based_on_devices': 'ផ្អែកលើឧបករណ៍ {} ជាមួយបន្ទុក {:.2f} kWh/ថ្ងៃ',
+        'solar_panels': '☀️ បន្ទះពន្លឺព្រះអាទិត្យ',
+        'battery': '🔋 ថ្ម',
+        'inverter': '⚡ ឧបករណ៍បំលែង',
+        'recommended': '📊 បានណែនាំ',
+        'auto_fill': '🤖 បំពេញតម្លៃដែលបានណែនាំ',
+        'solar_config': '☀️ ការកំណត់បន្ទះពន្លឺព្រះអាទិត្យ',
+        'battery_config': '🔋 ការកំណត់ថ្ម',
+        'inverter_config': '⚡ ការកំណត់ឧបករណ៍បំលែង',
+        'panel_model': 'ម៉ូដែលបន្ទះ',
+        'power_per_panel': 'ថាមពលក្នុងមួយបន្ទះ (វ៉ាត់)',
+        'total_capacity': 'សមត្ថភាពសរុប',
+        'total_cost': 'តម្លៃសរុប',
+        'battery_model': 'ម៉ូដែលថ្ម',
+        'capacity_kwh': 'សមត្ថភាព (kWh)',
+        'voltage': 'វ៉ុលថាម (V)',
+        'inverter_model': 'ម៉ូដែលឧបករណ៍បំលែង',
+        'power_rating': 'អត្រាថាមពល (kW)',
+        'save_config': '💾 រក្សាទុកការកំណត់{}',
+        'optimal_sizing': '✅ ទំហំល្អបំផុត',
+        
+        # Simulation
+        'simulation_title': '📊 ការវិភាគ និងការធ្វើត្រាប់តាម 24 ម៉ោង',
+        'simulation_subtitle': 'វិភាគការអនុវត្តប្រព័ន្ធថាមពលពន្លឺព្រះអាទិត្យក្នុងរយៈពេល 24 ម៉ោង',
+        'customer_project': '👤 គម្រោងអតិថិជន',
+        'run_simulation': '▶️ ដំណើរការការធ្វើត្រាប់តាម 24 ម៉ោង',
+        'simulation_results': '📈 លទ្ធផលការធ្វើត្រាប់តាម',
+        'kpi': '⚡ សូចនាករសម្រេចការងារសំខាន់',
+        'pv_generation': '☀️ ការផលិតថាមពលពន្លឺព្រះអាទិត្យ',
+        'total_load': '🔌 បន្ទុកសរុប',
+        'grid_import': '🔗 ការនាំចូលពីបណ្តាញ',
+        'energy_flow': '📊 លំហូរថាមពល 24 ម៉ោង',
+        'system_insights': '💡 ការយល់ដឹងអំពីប្រព័ន្ធ',
+        'battery_performance': '🔋 ការអនុវត្តថ្ម',
+        'solar_performance': '☀️ ការអនុវត្តថាមពលពន្លឺព្រះអាទិត្យ',
+        'energy_economics': '💰 សេដ្ឋកិច្ចថាមពល',
+        
+        # Reports
+        'reports_title': '📈 នាំចេញរបាយការណ៍',
+        'customer_report': '👤 របាយការណ៍អតិថិជន',
+        'download_reports': '📥 ទាញយករបាយការណ៍',
+        'export_excel': '📊 នាំចេញទៅ Excel',
+        'export_csv': '📄 នាំចេញទៅ CSV',
+        'export_pdf': '📕 នាំចេញទៅ PDF',
+        
+        # Messages
+        'customer_saved': '✅ បានរក្សាទុកព័ត៌មានអតិថិជនសម្រាប់ {}',
+        'enter_name_phone': '⚠️ សូមបញ្ចូលយ៉ាងហោចណាស់ឈ្មោះអតិថិជន និងលេខទូរស័ព្ទ',
+        'successfully_added': '✅ បានបន្ថែមដោយជោគជ័យ **{}x {}**{} - {:.2f} kWh/ថ្ងៃ{}',
+        'enter_device_name': '⚠️ សូមបញ្ចូលឈ្មោះឧបករណ៍',
+        'removed_device': 'បានលុប {}',
+        'added_small_home': '✅ បានបន្ថែមការរៀបចំផ្ទះតូច (14 ឧបករណ៍)',
+        'added_medium_home': '✅ បានបន្ថែមការរៀបចំផ្ទះមធ្យម (26 ឧបករណ៍)',
+        'added_large_home': '✅ បានបន្ថែមការរៀបចំផ្ទះធំ (40 ឧបករណ៍)',
+        'device_exists': '⚠️ {} មានរួចហើយ',
+        'added_device': '✅ បានបន្ថែម {}',
+        'add_devices_first': '⚠️ សូមបន្ថែមឧបករណ៍ជាមុនសិនដើម្បីទទួលបានការណែនាំស្វ័យប្រវត្តិ',
+        'above_recommended': 'ℹ️ {:.1f} {} លើសពីការណែនាំ ({})',
+        'below_recommended': '⚠️ {:.1f} {} ក្រោមការណែនាំ',
+        'config_saved': '✅ បានកំណត់ {} ដោយជោគជ័យ!',
+        'simulation_complete': '🎉 ការធ្វើត្រាប់តាមបានបញ្ចប់ដោយជោគជ័យ!',
+        'run_simulation_first': '⚠️ សូមដំណើរការការធ្វើត្រាប់តាមជាមុនសិន',
+        'exported_to': '✅ បាននាំចេញទៅ {}',
+        'with_inverter': ' ជាមួយបច្ចេកវិទ្យា Inverter',
+        'saves_kwh': ' (សន្សំ {:.2f} kWh/ថ្ងៃ)',
+        'good_for_growth': 'ល្អសម្រាប់ការរីកចម្រើន',
+        'extra_backup': 'បម្រុងបន្ថែម',
+        'good_headroom': 'មានទំហំល្អ',
+        
+        # Labels in HTML
+        'na': 'មិនមាន',
+        'not_set': 'មិនទាន់កំណត់',
+        'active': 'សកម្ម',
+        'estimated': 'ប៉ាន់ស្មាន',
+        'example': 'ឧទាហរណ៍',
+        'purpose': 'គោលបំណង',
+        'peak_load': 'បន្ទុកខ្ពស់បំផុត',
+        'margin': 'ការពារ',
+        'continuous': 'តទៅ',
+        'max_output': 'លទ្ធផលអតិបរមា',
+        'usable_energy': 'ថាមពលដែលអាចប្រើបាន',
+        'dod': 'DoD',
+        'per_panel': '/បន្ទះ',
+        'month': '/ខែ',
+        'excellent': 'ល្អឥតខ្ចោះ',
+        'good': 'ល្អ',
+        'low': 'ទាប',
+        'moderate': 'មធ្យម',
+        'kw': 'kW',
+        'kwh': 'kWh',
+        'small_home': 'ផ្ទះតូច',
+        'medium_home': 'ផ្ទះមធ្យម',
+        'large_home': 'ផ្ទះធំ',
+        'bedrooms': 'បន្ទប់គេង',
+        'people': 'នាក់',
+        'devices_count': 'ឧបករណ៍',
+        
+        # Common
+        'save': 'រក្សាទុក',
+        'cancel': 'បោះបង់',
+        'success': 'ជោគជ័យ',
+        'error': 'កំហុស',
+        'warning': 'ការព្រមាន',
+        'company': 'ក្រុមហ៊ុន',
+        'phone': 'ទូរស័ព្ទ',
+        'telegram': 'Telegram',
+        'email': 'អ៊ីមែល',
+        'cost': 'តម្លៃ',
+        'status': 'ស្ថានភាព',
+        'not_configured': 'មិនទាន់កំណត់',
+        'configured': 'បានកំណត់',
+        'customer': 'អតិថិជន',
+    }
+}
+
+# Initialize session state
+if 'devices' not in st.session_state:
+    st.session_state.devices = []
+if 'system_config' not in st.session_state:
+    st.session_state.system_config = SystemConfiguration()
+if 'simulation_results' not in st.session_state:
+    st.session_state.simulation_results = None
+if 'product_manager' not in st.session_state:
+    st.session_state.product_manager = ProductManager()
+if 'customer_info' not in st.session_state:
+    st.session_state.customer_info = {
+        'name': '',
+        'company': '',
+        'phone': '',
+        'telegram': '',
+        'email': '',
+        'address': ''
+    }
+if 'language' not in st.session_state:
+    st.session_state.language = 'en'  # Default to English
+
+# Helper function to get translation
+def t(key):
+    """Get translation for current language"""
+    return TRANSLATIONS[st.session_state.language].get(key, key)
+
+# Sidebar
+st.sidebar.title(t('nav_title'))
+
+# Language Selector with improved design
+st.sidebar.markdown("""<div style='text-align: center; padding: 0.5rem 0;'><small>🌏 Language / ភាសា</small></div>""", unsafe_allow_html=True)
+lang_col1, lang_col2 = st.sidebar.columns(2)
+with lang_col1:
+    en_style = "primary" if st.session_state.language == 'en' else "secondary"
+    if st.button("🇬🇧 EN", use_container_width=True, type=en_style, key="lang_en"):
+        st.session_state.language = 'en'
+        st.rerun()
+with lang_col2:
+    kh_style = "primary" if st.session_state.language == 'kh' else "secondary"
+    if st.button("🇰🇭 KH", use_container_width=True, type=kh_style, key="lang_kh"):
+        st.session_state.language = 'kh'
+        st.rerun()
+
+# Show active language
+lang_name = "English" if st.session_state.language == 'en' else "ខ្មែរ (Khmer)"
+st.sidebar.markdown(f"""<div style='text-align: center; padding: 0.3rem; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 8px; color: white; font-size: 0.85rem; margin-top: 0.5rem;'>✓ {lang_name}</div>""", unsafe_allow_html=True)
+
+st.sidebar.markdown("---")
+
+page = st.sidebar.radio("Navigate:", [
+    t('nav_dashboard'),
+    t('nav_devices'),
+    t('nav_system'),
+    t('nav_products'),
+    t('nav_simulation'),
+    t('nav_reports')
+])
+
+# ==================== DASHBOARD ====================
+if page == t('nav_dashboard'):
+    st.title(t('dash_title'))
+    st.markdown(f"#### {t('dash_subtitle')}")
+    
+    # Customer Information Section
+    if st.session_state.customer_info['name'] or st.session_state.customer_info['company']:
+        # Display existing customer info
+        st.markdown(f"### {t('customer_info')}")
+        
+        info_col1, info_col2, info_col3 = st.columns([2, 2, 1])
+        
+        with info_col1:
+            customer_display = st.session_state.customer_info['name'] or t('not_set')
+            company_display = st.session_state.customer_info['company'] or t('na')
+            st.markdown(f"""
+            <div class="custom-card">
+                <h4>👤 {customer_display}</h4>
+                <p><b>{t('company')}:</b> {company_display}</p>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with info_col2:
+            phone_display = st.session_state.customer_info['phone'] or t('na')
+            telegram_display = st.session_state.customer_info['telegram'] or t('na')
+            email_display = st.session_state.customer_info['email'] or t('na')
+            st.markdown(f"""
+            <div class="custom-card">
+                <h4>{t('contact_details')}</h4>
+                <p><b>{t('phone')}:</b> {phone_display}</p>
+                <p><b>{t('telegram')}:</b> {telegram_display}</p>
+                <p><b>{t('email')}:</b> {email_display}</p>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with info_col3:
+            st.markdown("<br>", unsafe_allow_html=True)
+            if st.button(t('remove_device'), type="secondary", use_container_width=True):
+                removed = st.session_state.devices.pop(idx)
+                st.success(t('removed_device').format(removed.name))
+                st.rerun()
+        
+        st.markdown("---")
+    else:
+        # Show form to add customer info
+        st.markdown(f"""
+        <div class="warning-box">
+            <h3>{t('customer_required')}</h3>
+{{ ... }}
+                if name and phone:
+                    st.session_state.customer_info = {
+                        'name': name,
+                        'company': company,
+                        'phone': phone,
+                    inverter_text = t('with_inverter') if has_inverter else ""
+                    savings_text = t('saves_kwh').format(daily_savings) if has_inverter else ""
+                    success_msg = t('successfully_added').format(quantity, name, inverter_text, daily_energy, savings_text)
+                    st.success(success_msg)
+                    st.rerun()
+                else:
+                    st.error(t('enter_device_name'))
+        
+        st.markdown("---")
+    
+    # Enhanced Metrics with Icons and Colors
+    col1, col2, col3, col4 = st.columns(4)
+{{ ... }}
+    
+    with col1:
+        device_count = len(st.session_state.devices)
+        st.metric(
+            label=t('total_devices'),
+            value=device_count,
+            delta=t('active') if device_count > 0 else t('add_devices')
+        )
+    
+    with col2:
+        total_load = sum(d.daily_energy_kwh for d in st.session_state.devices)
+        monthly_load = total_load * 30
+        st.metric(
+            label=t('daily_consumption'),
+            value=f"{total_load:.2f} kWh",
+            delta=f"{monthly_load:.0f} kWh/month"
+        )
+    
+    with col3:
+        pv_cap = st.session_state.system_config.solar_panels.total_power_kw if st.session_state.system_config.solar_panels else 0
+        pv_status = t('configured') if pv_cap > 0 else t('not_configured')
+        st.metric(
+            label="☀️ PV Capacity",
+            value=f"{pv_cap:.2f} kW",
+            delta=pv_status,
+            delta_color="normal" if pv_cap > 0 else "off"
+        )
+    
+    with col4:
+        bat_cap = st.session_state.system_config.battery.capacity_kwh if st.session_state.system_config.battery else 0
+        bat_status = t('ready') if bat_cap > 0 else t('not_configured')
+        st.metric(
+            label="🔋 Battery Storage",
+            value=f"{bat_cap:.1f} kWh",
+            delta=bat_status,
+            delta_color="normal" if bat_cap > 0 else "off"
+        )
+    
+    st.markdown("---")
+    
+    # Progress Indicator
+    st.markdown("### 📊 Setup Progress")
+    setup_steps = [
+        (t('devices_added'), device_count > 0),
+        (t('solar_panels_configured'), st.session_state.system_config.solar_panels is not None),
+        (t('battery_configured'), st.session_state.system_config.battery is not None),
+        (t('inverter_configured'), st.session_state.system_config.inverter is not None)
+    ]
+    
+    completed_steps = sum(1 for _, done in setup_steps if done)
+    progress = completed_steps / len(setup_steps)
+    
+    progress_col1, progress_col2 = st.columns([3, 1])
+    with progress_col1:
+        st.progress(progress)
+    with progress_col2:
+        st.markdown(f"**{completed_steps}/{len(setup_steps)} {t('complete')}")
+    
+    # Step status
+    step_cols = st.columns(4)
+    for idx, (step_name, is_done) in enumerate(setup_steps):
+        with step_cols[idx]:
+            status_icon = "✅" if is_done else "⭕"
+            st.markdown(f"{status_icon} {step_name}")
+    
+    st.markdown("---")
+    
+    # Quick Start Guide with Better Layout
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown("""
+        <div class="info-box">
+            <h3>🚀 Quick Start Guide</h3>
+            <ol style="line-height: 2; margin-top: 1rem;">
+                <li><b>⚡ Add Devices</b> - Input your appliances</li>
+                <li><b>🔧 Configure System</b> - Set up panels, battery & inverter</li>
+                <li><b>🛒 Browse Products</b> - Explore equipment options</li>
+                <li><b>📊 Run Simulation</b> - Analyze 24-hour energy flow</li>
+                <li><b>📈 Export Reports</b> - Generate professional reports</li>
+            </ol>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with col2:
+        st.markdown("""
+        <div class="success-box">
+            <h3>✨ Key Features</h3>
+            <ul style="line-height: 2; margin-top: 1rem;">
+                <li>📱 Smart Device Scheduling</li>
+                <li>🔋 Battery Optimization</li>
+                <li>☀️ PV Array Design</li>
+                <li>💰 ROI & Payback Analysis</li>
+                <li>📊 Interactive Visualizations</li>
+                <li>🌍 Khmer Household Focus</li>
+            </ul>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    # System Status Cards
+    if device_count > 0 or pv_cap > 0:
+        st.markdown("---")
+        st.markdown("### 🎯 System Overview")
+        
+        overview_col1, overview_col2, overview_col3 = st.columns(3)
+        
+        with overview_col1:
+            st.markdown(f"""
+            <div class="custom-card">
+                <h4>⚡ Load Summary</h4>
+                <p><b>Daily:</b> {total_load:.2f} kWh</p>
+                <p><b>Monthly:</b> {monthly_load:.0f} kWh</p>
+                <p><b>Devices:</b> {device_count}</p>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with overview_col2:
+            pv_monthly = pv_cap * st.session_state.system_config.sunlight_hours * 30 if pv_cap > 0 else 0
+            st.markdown(f"""
+            <div class="custom-card">
+                <h4>☀️ Solar Generation</h4>
+                <p><b>Capacity:</b> {pv_cap:.2f} kW</p>
+                <p><b>Monthly Est:</b> {pv_monthly:.0f} kWh</p>
+                <p><b>Peak Hours:</b> {st.session_state.system_config.sunlight_hours:.1f} hrs</p>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with overview_col3:
+            if pv_cap > 0 and total_load > 0:
+                coverage = (pv_monthly / monthly_load * 100) if monthly_load > 0 else 0
+                coverage_status = t('excellent') if coverage >= 100 else t('good') if coverage >= 80 else "Needs increase"
+                coverage_color = "#10b981" if coverage >= 100 else "#f59e0b" if coverage >= 80 else "#ef4444"
+            else:
+                coverage = 0
+                coverage_status = "Configure system"
+                coverage_color = "#6b7280"
+            
+            st.markdown(f"""
+            <div class="custom-card">
+                <h4>📈 System Status</h4>
+                <p><b>Coverage:</b> <span style="color: {coverage_color}">{coverage:.0f}%</span></p>
+                <p><b>Status:</b> {coverage_status}</p>
+                <p><b>Battery:</b> {bat_cap:.1f} kWh</p>
+            </div>
+            """, unsafe_allow_html=True)
+        fig = viz.create_24h_energy_flow_chart(results)
+        st.plotly_chart(fig, use_container_width=True)
+        
+        # Additional insights
+        st.markdown("---")
+        st.markdown("#### 💡 System Insights")
+        
+        insight_col1, insight_col2, insight_col3 = st.columns(3)
+        
+        with insight_col1:
+            avg_battery_soc = sum(r.battery_soc for r in results) / len(results)
+            min_battery_soc = min(r.battery_soc for r in results)
+            
+            st.markdown(f"""
+            <div class="custom-card">
+                <h4>🔋 Battery Performance</h4>
+                <p><b>Average SoC:</b> {avg_battery_soc:.1f}%</p>
+                <p><b>Minimum SoC:</b> {min_battery_soc:.1f}%</p>
+                <p><b>Status:</b> {"Excellent" if min_battery_soc > 30 else "Needs attention"}</p>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with insight_col2:
+            peak_pv = max(r.pv_generation_kw for r in results)
+            peak_hour = next(r.hour for r in results if r.pv_generation_kw == peak_pv)
+            
+            st.markdown(f"""
+            <div class="custom-card">
+                <h4>☀️ Solar Performance</h4>
+                <p><b>Peak Generation:</b> {peak_pv:.2f} kW</p>
+                <p><b>Peak Hour:</b> {peak_hour}:00</p>
+                <p><b>Daily Total:</b> {total_pv:.2f} kWh</p>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        with insight_col3:
+            energy_wasted = sum(r.energy_surplus_kw for r in results)
+            grid_export_value = total_grid_export * 0.15
+            
+            st.markdown(f"""
+            <div class="custom-card">
+                <h4>💰 Energy Economics</h4>
+                <p><b>Grid Export:</b> {total_grid_export:.2f} kWh</p>
+                <p><b>Export Value:</b> ${grid_export_value:.2f}</p>
+                <p><b>Wasted Energy:</b> {energy_wasted:.2f} kWh</p>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        # Financial Analysis
+        st.markdown("---")
+        st.subheader("💰 Financial Analysis")
+        
+        calc = SolarCalculator(st.session_state.system_config)
+        system_cost = st.session_state.system_config.total_system_cost
+        annual_energy = total_pv * 365
+        
+        financial = calc.calculate_financial_analysis(
+            system_cost, annual_energy,
+            st.session_state.system_config.electricity_rate
+        )
+        
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.metric("System Cost", f"${financial.total_system_cost:,.2f}")
+            st.metric("Annual Savings", f"${financial.annual_savings:,.2f}")
+        with col2:
+            st.metric("Payback Period", f"{financial.payback_period_years:.1f} years")
+            st.metric("ROI (25 years)", f"{financial.roi_percent:.1f}%")
+        with col3:
+            st.metric("Lifetime Savings", f"${financial.lifetime_savings:,.2f}")
+            st.metric("CO₂ Reduction", f"{financial.co2_reduction_kg_per_year:,.0f} kg/year")
+        
+        # Recommendations
+        st.markdown("---")
+        st.subheader("💡 AI Recommendations")
+        recommendations = calc.get_device_recommendations(
+            st.session_state.devices, pv_cap, bat_cap
+        )
+        for rec in recommendations:
+            st.info(rec)
+
+# ==================== REPORTS ====================
+elif page == t('nav_reports'):
+    st.title(t('reports_title'))
+    
+    if not st.session_state.simulation_results:
+        st.warning("⚠️ Run a simulation first")
+        st.stop()
+    
+    # Display customer info
+    if st.session_state.customer_info['name']:
+        st.markdown(f"### {t('customer_report')}")
+        report_col1, report_col2 = st.columns(2)
+        with report_col1:
+            st.markdown(f"""
+            <div class="custom-card" style="padding: 1rem;">
+                <p style="margin: 0;"><b>Customer:</b> {st.session_state.customer_info['name']}</p>
+                <p style="margin: 0;"><b>Company:</b> {st.session_state.customer_info['company'] or 'N/A'}</p>
+                <p style="margin: 0;"><b>Address:</b> {st.session_state.customer_info['address'] or 'N/A'}</p>
+            </div>
+            """, unsafe_allow_html=True)
+        with report_col2:
+            st.markdown(f"""
+            <div class="custom-card" style="padding: 1rem;">
+                <p style="margin: 0;"><b>Phone:</b> {st.session_state.customer_info['phone']}</p>
+                <p style="margin: 0;"><b>Telegram:</b> {st.session_state.customer_info['telegram'] or 'N/A'}</p>
+                <p style="margin: 0;"><b>Email:</b> {st.session_state.customer_info['email'] or 'N/A'}</p>
+            </div>
+            """, unsafe_allow_html=True)
+        st.markdown("---")
+    
+    exporter = ReportExporter()
+    results = st.session_state.simulation_results
+    devices = st.session_state.devices
+    
+    # Financial data
+    calc = SolarCalculator(st.session_state.system_config)
+    total_pv = sum(r.pv_generation_kw for r in results)
+    annual_energy = total_pv * 365
+    system_cost = st.session_state.system_config.total_system_cost
+    financial = calc.calculate_financial_analysis(system_cost, annual_energy, 0.20)
+    
+    st.markdown(f"### {t('download_reports')}")
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        if st.button(t('export_excel'), type="primary", use_container_width=True):
+            exporter.export_to_excel(results, devices, financial, "solar_report.xlsx")
+            st.success("✅ Exported to solar_report.xlsx")
+    
+    with col2:
+        if st.button(t('export_csv'), use_container_width=True):
+            exporter.export_to_csv(results, "solar_simulation.csv")
+            st.success("✅ Exported to solar_simulation.csv")
+    
+    with col3:
+        if st.button(t('export_pdf'), use_container_width=True):
+            system_config = {
+                "customer_name": st.session_state.customer_info['name'],
+                "customer_company": st.session_state.customer_info['company'],
+                "customer_phone": st.session_state.customer_info['phone'],
+                "customer_telegram": st.session_state.customer_info['telegram'],
+                "customer_email": st.session_state.customer_info['email'],
+                "customer_address": st.session_state.customer_info['address'],
+                "location": st.session_state.system_config.location,
+                "pv_capacity": st.session_state.system_config.solar_panels.total_power_kw if st.session_state.system_config.solar_panels else 0,
+                "battery_capacity": st.session_state.system_config.battery.capacity_kwh if st.session_state.system_config.battery else 0,
+                "inverter_power": st.session_state.system_config.inverter.power_kw if st.session_state.system_config.inverter else 0
+            }
+            exporter.generate_pdf_report(results, devices, financial, system_config, "solar_report.pdf")
+            st.success("✅ Exported to solar_report.pdf")
+    
+    # Summary table
+    st.markdown("---")
+    st.subheader("Daily Summary Table")
+    viz = SolarVisualizer()
+    summary_df = viz.create_monthly_summary_table(results)
+    st.dataframe(summary_df, use_container_width=True)
+
+st.sidebar.markdown("---")
+st.sidebar.info("**Solar Planning Software v1.0**\n\nComprehensive solar system design and business management tool.")
