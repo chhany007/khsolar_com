@@ -1,0 +1,226 @@
+╔══════════════════════════════════════════════════════════╗
+║                                                          ║
+║     🚀 DEPLOY KHSOLAR - CORRECTED INSTRUCTIONS          ║
+║                                                          ║
+╚══════════════════════════════════════════════════════════╝
+
+✅ FILES READY:
+   - streamlit_app.py ✓ (main file for Streamlit Cloud)
+   - app.py ✓ (backup/local version)
+   - requirements.txt ✓
+   - All other files ✓
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STEP 1️⃣: CREATE GITHUB REPOSITORY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Go to: https://github.com/new
+
+2. Fill in:
+   Repository name: khsolar
+   Description: KHSolar v2.0 - Solar System Design Platform
+   ✓ Public (recommended)
+   ✗ Do NOT add README (we have files already)
+
+3. Click "Create repository"
+
+4. COPY the repository URL (you'll need it!)
+   It will look like: https://github.com/YOUR_USERNAME/khsolar.git
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STEP 2️⃣: PUSH CODE TO GITHUB
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Open PowerShell or Command Prompt and run these ONE BY ONE:
+
+# Go to project folder
+cd "c:\Users\Jason\OneDrive\Desktop\sola project\2nd update software"
+
+# Initialize Git
+git init
+
+# Add all files
+git add .
+
+# Make first commit
+git commit -m "KHSolar v2.0 - Initial Deploy"
+
+# Set branch to 'main' (important!)
+git branch -M main
+
+# Add your GitHub repository (REPLACE YOUR_USERNAME!)
+git remote add origin https://github.com/YOUR_USERNAME/khsolar.git
+
+# Push to GitHub
+git push -u origin main
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STEP 3️⃣: DEPLOY ON STREAMLIT CLOUD
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Go to: https://share.streamlit.io
+
+2. Click "Sign in" → Use GitHub account
+
+3. Click "New app" button
+
+4. Fill in EXACTLY:
+
+   ┌─────────────────────────────────────┐
+   │ Repository:  YOUR_USERNAME/khsolar  │
+   │ Branch:      main                   │ ← NOT master!
+   │ Main file:   streamlit_app.py       │ ← NOT app.py!
+   │ App URL:     khsolar                │ (optional)
+   └─────────────────────────────────────┘
+
+5. Click "Deploy!" button
+
+6. Wait 2-3 minutes while it deploys...
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+STEP 4️⃣: ADD TELEGRAM SECRETS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+After deployment succeeds:
+
+1. In your deployed app, click ⚙️ Settings (top right)
+
+2. In left menu, click "Secrets"
+
+3. Copy and paste EXACTLY this text:
+
+[telegram]
+api_id = "23473875"
+api_hash = "0a487bc6b3460217fe1fb7f8b91e5cfb"
+phone = "+8550888836588"
+bot_token = "8258016332:AAFdR7b4y-BPzM-CdIpIMLnF2-8SFESQz1g"
+
+4. Click "Save"
+
+5. App will restart automatically ✅
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🎉 DEPLOYMENT COMPLETE!
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Your live app URL:
+https://YOUR_USERNAME-khsolar.streamlit.app
+
+OR if you set custom subdomain "khsolar":
+https://khsolar.streamlit.app
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📝 IMPORTANT SETTINGS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✅ CORRECT Settings:
+   Repository: YOUR_USERNAME/khsolar
+   Branch: main
+   Main file: streamlit_app.py
+
+❌ WRONG (Don't use these):
+   Branch: master ← This doesn't exist!
+   Main file: app.py ← Use streamlit_app.py instead!
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔄 UPDATE APP LATER
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+When you make changes:
+
+cd "c:\Users\Jason\OneDrive\Desktop\sola project\2nd update software"
+git add .
+git commit -m "Updated features"
+git push origin main
+
+Streamlit Cloud auto-redeploys! 🎉
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⚠️ TROUBLESHOOTING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Problem: "Branch 'master' does not exist"
+→ Use branch: main (not master)
+
+Problem: "streamlit_app.py not found"
+→ Main file should be: streamlit_app.py
+→ We already created this file ✓
+
+Problem: "Repository not found"
+→ Make sure you replaced YOUR_USERNAME
+→ Check repo is Public
+
+Problem: Git not installed
+→ Download: https://git-scm.com/download/win
+
+Problem: Already initialized git
+→ Skip "git init" command
+→ Just run: git add . → commit → push
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📋 QUICK CHECKLIST
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+BEFORE GITHUB:
+□ streamlit_app.py exists ✓
+□ requirements.txt updated ✓
+□ .gitignore configured ✓
+
+GITHUB SETUP:
+□ Created repository
+□ Copied repository URL
+□ Replaced YOUR_USERNAME in commands
+
+PUSHED TO GITHUB:
+□ git init
+□ git add .
+□ git commit
+□ git branch -M main
+□ git remote add origin
+□ git push -u origin main
+
+STREAMLIT CLOUD:
+□ Signed in with GitHub
+□ Created new app
+□ Repository: YOUR_USERNAME/khsolar
+□ Branch: main ✓
+□ Main file: streamlit_app.py ✓
+□ Clicked Deploy
+
+SECRETS:
+□ Opened Settings
+□ Added Telegram secrets
+□ Clicked Save
+
+TESTING:
+□ App loaded successfully
+□ Dashboard works
+□ Calculator functions
+□ Language switches
+□ Forms work
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📞 SUPPORT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Phone: 0888836588
+Telegram: @chhanycls
+
+Docs:
+- Streamlit: https://docs.streamlit.io
+- GitHub: https://docs.github.com
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✅ READY TO DEPLOY!
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Files are ready:
+✓ streamlit_app.py (main file)
+✓ requirements.txt
+✓ All dependencies
+
+Just follow the 4 steps above!
+
+🎉 You'll be live in 5 minutes! 🚀
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
