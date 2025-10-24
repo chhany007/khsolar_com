@@ -101,19 +101,36 @@ class PersonalTelegramSender:
             else:
                 message = format_report_bilingual(report_text)
             
-            # Send message
-            # If username, add @ prefix
-            if not username_or_phone.startswith('+'):
-                recipient = f"@{username_or_phone}" if not username_or_phone.startswith('@') else username_or_phone
-            else:
-                recipient = username_or_phone
+            # Clean and format identifier
+            identifier = str(username_or_phone).strip().lstrip('@').lstrip('+')
             
+            # Determine if it's a phone number or username
+            is_phone = identifier.replace('+', '').isdigit()
+            
+            if is_phone:
+                # Format as phone number with + prefix
+                if not identifier.startswith('+'):
+                    recipient = f"+{identifier}"
+                else:
+                    recipient = identifier
+            else:
+                # Format as username with @ prefix
+                recipient = f"@{identifier}"
+            
+            # Send message
             self.client.send_message(recipient, message, parse_mode='html')
             
             return True, f"✅ Report sent to {recipient}!"
             
         except Exception as e:
-            return False, f"❌ Failed to send: {str(e)}"
+            error_msg = str(e)
+            # Provide helpful error messages
+            if "Cannot find any entity" in error_msg:
+                if is_phone:
+                    return False, f"❌ Phone number {recipient} not found. Make sure they have Telegram and the number is correct."
+                else:
+                    return False, f"❌ Username {recipient} not found. Check spelling or ask them to message you first."
+            return False, f"❌ Failed to send: {error_msg}"
     
     def disconnect(self):
         """Disconnect from Telegram"""

@@ -3,11 +3,18 @@ KHSolar - Ultimate Solar Planning & Business Software
 """
 import streamlit as st
 import pandas as pd
-from models import Device, SystemConfiguration, SolarPanel, Battery, Inverter
-from calculations import SolarCalculator
+import numpy as np
+from datetime import datetime
+import plotly.graph_objects as go
+import plotly.express as px
+from pathlib import Path
+import json
+import sqlite3
+import re
 from product_manager import ProductManager
 from visualization import SolarVisualizer
 from export_utils import ReportExporter
+from calculations import SolarCalculator
 
 # Page config
 st.set_page_config(page_title="KHSolar - Solar Planning Software", page_icon="☀️", layout="wide")
@@ -839,6 +846,86 @@ TRANSLATIONS = {
     }
 }
 
+# Initialize VIP user database
+def init_vip_database():
+    """Initialize SQLite database for VIP users"""
+    conn = sqlite3.connect('vip_users.db')
+    c = conn.cursor()
+    c.execute('''CREATE TABLE IF NOT EXISTS vip_users
+                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                  phone TEXT UNIQUE,
+                  telegram TEXT,
+                  name TEXT,
+                  email TEXT,
+                  is_vip INTEGER DEFAULT 0,
+                  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                  expires_at TIMESTAMP)''')
+    conn.commit()
+    conn.close()
+
+init_vip_database()
+
+def check_vip_status(phone=None, telegram=None):
+    """Check if user is VIP by phone or telegram"""
+    try:
+        conn = sqlite3.connect('vip_users.db')
+        c = conn.cursor()
+        
+        if phone:
+            c.execute('SELECT is_vip, expires_at FROM vip_users WHERE phone = ?', (phone,))
+        elif telegram:
+            telegram_clean = telegram.strip().lstrip('@')
+            c.execute('SELECT is_vip, expires_at FROM vip_users WHERE telegram = ?', (telegram_clean,))
+        else:
+            return False
+            
+        result = c.fetchone()
+        conn.close()
+        
+        if result and result[0] == 1:
+            # Check if VIP hasn't expired
+            if result[1] is None:  # No expiration
+                return True
+            expires = datetime.strptime(result[1], '%Y-%m-%d %H:%M:%S')
+            return datetime.now() < expires
+        return False
+    except:
+        return False
+
+def add_vip_user(phone, telegram='', name='', email='', expires_at=None):
+    """Add or update VIP user"""
+    try:
+        conn = sqlite3.connect('vip_users.db')
+        c = conn.cursor()
+        telegram_clean = telegram.strip().lstrip('@') if telegram else ''
+        
+        c.execute('''INSERT OR REPLACE INTO vip_users 
+                     (phone, telegram, name, email, is_vip, expires_at)
+                     VALUES (?, ?, ?, ?, 1, ?)''',
+                  (phone, telegram_clean, name, email, expires_at))
+        conn.commit()
+        conn.close()
+        return True
+    except Exception as e:
+        print(f"Error adding VIP user: {e}")
+        return False
+
+# VIP Login Functions
+def verify_vip_login(username, password):
+    """Verify VIP login credentials"""
+    import hashlib
+    try:
+        conn = sqlite3.connect('admin_users.db')
+        c = conn.cursor()
+        password_hash = hashlib.sha256(password.encode()).hexdigest()
+        c.execute('SELECT id, username FROM admin_users WHERE username = ? AND password_hash = ?',
+                  (username, password_hash))
+        result = c.fetchone()
+        conn.close()
+        return result is not None
+    except:
+        return False
+
 # Initialize session state
 if 'devices' not in st.session_state:
     st.session_state.devices = []
@@ -848,28 +935,16 @@ if 'simulation_results' not in st.session_state:
     st.session_state.simulation_results = None
 if 'product_manager' not in st.session_state:
     st.session_state.product_manager = ProductManager()
-
-# Performance optimization with caching
-@st.cache_data(ttl=3600)
-def load_product_data():
-    """Cache product data for 1 hour"""
-    return ProductManager()
-
-@st.cache_data(ttl=600)
-def calculate_system_metrics(monthly_kwh, system_type):
-    """Cache calculation results for 10 minutes"""
-    daily_kwh = monthly_kwh / 30
-    sunlight_hours = 5.5
-    pv_kw = (daily_kwh / sunlight_hours) * 1.25
-    
-    if "Off-Grid" in system_type:
-        battery_kwh = daily_kwh * 2
-    elif "Hybrid" in system_type:
-        battery_kwh = daily_kwh * 0.7
-    else:
-        battery_kwh = 0
-    
-    return pv_kw, battery_kwh
+if 'language' not in st.session_state:
+    st.session_state.language = 'en'
+if 'is_vip' not in st.session_state:
+    st.session_state.is_vip = False
+if 'vip_logged_in' not in st.session_state:
+    st.session_state.vip_logged_in = False
+if 'vip_username' not in st.session_state:
+    st.session_state.vip_username = ''
+if 'show_vip_login' not in st.session_state:
+    st.session_state.show_vip_login = False
 if 'customer_info' not in st.session_state:
     st.session_state.customer_info = {
         'name': '',
@@ -904,20 +979,65 @@ st.sidebar.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# Navigation Menu - Compact (VIP features temporarily disabled)
-page = st.sidebar.radio("📍 Navigate", [
-    t('nav_dashboard'),
-    t('nav_devices') + " 🔒",
-    t('nav_system') + " 🔒",
-    t('nav_products') + " 🔒",
-    t('nav_simulation') + " 🔒",
-    t('nav_reports') + " 🔒"
-], label_visibility="visible")
+# VIP Login Button and Status
+if not st.session_state.is_vip and not st.session_state.vip_logged_in:
+    # Show VIP Login button
+    if st.sidebar.button("👑 VIP Login", use_container_width=True, type="primary"):
+        st.session_state.show_vip_login = True
+        st.rerun()
+elif st.session_state.vip_logged_in:
+    # Show VIP status for logged in users
+    st.sidebar.markdown(f"""
+    <div style='background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                padding: 0.5rem; border-radius: 0.5rem; text-align: center; margin-bottom: 0.5rem;'>
+        <div style='color: white; font-weight: 700; font-size: 0.9rem;'>👑 VIP ACCESS</div>
+        <div style='color: rgba(255,255,255,0.9); font-size: 0.7rem;'>{st.session_state.vip_username}</div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Logout button
+    if st.sidebar.button("🚪 Logout", use_container_width=True):
+        st.session_state.vip_logged_in = False
+        st.session_state.is_vip = False
+        st.session_state.vip_username = ''
+        st.success("✅ Logged out successfully")
+        st.rerun()
+elif st.session_state.is_vip:
+    # Show VIP status for auto-detected users
+    st.sidebar.markdown("""
+    <div style='background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                padding: 0.5rem; border-radius: 0.5rem; text-align: center; margin-bottom: 0.5rem;'>
+        <div style='color: white; font-weight: 700; font-size: 0.9rem;'>👑 VIP ACCESS</div>
+        <div style='color: rgba(255,255,255,0.9); font-size: 0.7rem;'>All Features Unlocked</div>
+    </div>
+    """, unsafe_allow_html=True)
 
-# Check if user trying to access VIP features
-if "🔒" in page:
-    st.warning("🔒 **VIP Feature** - This feature is only available for VIP users. Contact admin for access.")
-    page = t('nav_dashboard')  # Redirect to dashboard
+# Navigation Menu - VIP features unlocked for VIP users
+if st.session_state.is_vip or st.session_state.vip_logged_in:
+    # VIP users see all features without locks
+    page = st.sidebar.radio("📍 Navigate", [
+        t('nav_dashboard'),
+        t('nav_devices'),
+        t('nav_system'),
+        t('nav_products'),
+        t('nav_simulation'),
+        t('nav_reports')
+    ], label_visibility="visible")
+else:
+    # Non-VIP users see locked features
+    page = st.sidebar.radio("📍 Navigate", [
+        t('nav_dashboard'),
+        t('nav_devices') + " 🔒",
+        t('nav_system') + " 🔒",
+        t('nav_products') + " 🔒",
+        t('nav_simulation') + " 🔒",
+        t('nav_reports') + " 🔒"
+    ], label_visibility="visible")
+    
+    # Check if user trying to access VIP features
+    if "🔒" in page:
+        st.warning("🔒 **VIP Feature** - This feature is only available for VIP users. Contact admin: +855888836588 or @chhanycls")
+        page = t('nav_dashboard')  # Redirect to dashboard
 
 st.sidebar.markdown("<div style='margin: 0.75rem 0;'><hr style='margin: 0; border: none; border-top: 1px solid #e5e7eb;'></div>", unsafe_allow_html=True)
 
@@ -949,6 +1069,71 @@ with lang_col2:
 
 # ==================== DASHBOARD ====================
 if page == t('nav_dashboard'):
+    # VIP Login Popup Modal
+    if st.session_state.show_vip_login:
+        st.markdown("""
+        <div style='
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        '>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # Login form in centered container
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            with st.container():
+                st.markdown("""
+                <div style='
+                    background: white;
+                    padding: 2rem;
+                    border-radius: 15px;
+                    box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+                '>
+                    <h2 style='text-align: center; color: #667eea; margin-bottom: 0.5rem;'>👑 VIP Login</h2>
+                    <p style='text-align: center; color: #666; margin-bottom: 1.5rem;'>Enter your credentials to access VIP features</p>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                with st.form("vip_login_form", clear_on_submit=True):
+                    username = st.text_input("👤 Username", placeholder="Enter username")
+                    password = st.text_input("🔒 Password", type="password", placeholder="Enter password")
+                    
+                    col_a, col_b = st.columns(2)
+                    with col_a:
+                        submit = st.form_submit_button("🔓 Login", type="primary", use_container_width=True)
+                    with col_b:
+                        cancel = st.form_submit_button("❌ Cancel", use_container_width=True)
+                    
+                    if submit:
+                        if username and password:
+                            if verify_vip_login(username, password):
+                                st.session_state.vip_logged_in = True
+                                st.session_state.is_vip = True
+                                st.session_state.vip_username = username
+                                st.session_state.show_vip_login = False
+                                st.success(f"✅ Welcome, {username}! VIP access granted.")
+                                st.balloons()
+                                st.rerun()
+                            else:
+                                st.error("❌ Invalid username or password")
+                        else:
+                            st.warning("⚠️ Please enter both username and password")
+                    
+                    if cancel:
+                        st.session_state.show_vip_login = False
+                        st.rerun()
+                
+                st.markdown("<div style='text-align: center; margin-top: 1rem; color: #666; font-size: 0.85rem;'>🔒 Secure VIP Access</div>", unsafe_allow_html=True)
+    
     # Remove top hero section completely to save space
     
     # Enhanced Customer Information Section
@@ -1072,7 +1257,8 @@ if page == t('nav_dashboard'):
                 telegram = st.text_input(
                     t('telegram_username'),
                     value=st.session_state.customer_info['telegram'],
-                    placeholder="e.g., @sokpisey"
+                    placeholder="@username or +855123456789",
+                    help="Enter Telegram username or phone number"
                 )
                 email = st.text_input(
                     t('email_address'),
@@ -1091,32 +1277,50 @@ if page == t('nav_dashboard'):
             
             if submitted:
                 if name and phone:
-                    # Validate Telegram username format if provided
+                    # Validate Telegram username/phone format if provided
                     telegram_valid = True
+                    telegram_clean = telegram
+                    
                     if telegram:
-                        # Remove @ if user added it
-                        telegram_clean = telegram.strip().lstrip('@')
-                        # Check if username is valid (alphanumeric, underscore, 5-32 chars)
-                        import re
-                        if not re.match(r'^[a-zA-Z0-9_]{5,32}$', telegram_clean):
-                            st.error("⚠️ Telegram username must be 5-32 characters (letters, numbers, underscore only)")
-                            telegram_valid = False
+                        telegram_clean = telegram.strip().lstrip('@').lstrip('+')
+                        
+                        # Check if it's a phone number (digits only, possibly with +)
+                        if telegram_clean.replace('+', '').isdigit():
+                            # Valid phone number format
+                            if len(telegram_clean) < 8 or len(telegram_clean) > 15:
+                                st.error("⚠️ Phone number must be 8-15 digits")
+                                telegram_valid = False
                         else:
-                            telegram = telegram_clean  # Save without @
+                            # Check if username is valid (alphanumeric, underscore, 5-32 chars)
+                            if not re.match(r'^[a-zA-Z0-9_]{5,32}$', telegram_clean):
+                                st.error("⚠️ Telegram username must be 5-32 characters (letters, numbers, underscore only) or a valid phone number")
+                                telegram_valid = False
                     
                     if telegram_valid:
+                        # Check VIP status
+                        is_vip = check_vip_status(phone=phone, telegram=telegram_clean)
+                        st.session_state.is_vip = is_vip
+                        
                         st.session_state.customer_info = {
                             'name': name,
                             'company': company,
                             'phone': phone,
-                            'telegram': telegram,
+                            'telegram': telegram_clean,
                             'email': email,
                             'address': address
                         }
                         st.session_state.show_customer_form = False
+                        
                         success_msg = f"✅ Customer information saved for {name}"
-                        if telegram:
-                            success_msg += f" | Telegram: @{telegram}"
+                        if telegram_clean:
+                            if telegram_clean.isdigit():
+                                success_msg += f" | Telegram: +{telegram_clean}"
+                            else:
+                                success_msg += f" | Telegram: @{telegram_clean}"
+                        
+                        if is_vip:
+                            success_msg += " | 👑 VIP ACCESS GRANTED"
+                        
                         st.success(success_msg)
                         st.rerun()
                 else:

@@ -1,0 +1,12 @@
+streamlit
+pandas
+numpy
+plotly
+matplotlib
+openpyxl
+reportlab
+Pillow
+python-dotenv
+python-docx
+telethon
+nest-asyncio

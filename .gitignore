@@ -2,6 +2,10 @@
 .env
 telegram_users.db
 
+# VIP System Security
+vip_users.db
+admin_users.db
+
 # Python
 __pycache__/
 *.py[cod]
