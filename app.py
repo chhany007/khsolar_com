@@ -15,6 +15,7 @@ from product_manager import ProductManager
 from visualization import SolarVisualizer
 from export_utils import ReportExporter
 from calculations import SolarCalculator
+from models import SystemConfiguration, Device, SimulationResult
 
 # Page config
 st.set_page_config(page_title="KHSolar - Solar Planning Software", page_icon="☀️", layout="wide")
