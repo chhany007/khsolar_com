@@ -11,11 +11,33 @@ from pathlib import Path
 import json
 import sqlite3
 import re
+import base64
 from product_manager import ProductManager
 from visualization import SolarVisualizer
 from export_utils import ReportExporter
 from calculations import SolarCalculator
-from models import SystemConfiguration, Device, SimulationResult
+from models import (
+    SystemConfiguration, 
+    Device, 
+    SimulationResult, 
+    SolarPanel, 
+    Battery, 
+    Inverter, 
+    Product, 
+    FinancialAnalysis
+)
+
+# Load logo once at startup
+@st.cache_data
+def load_logo():
+    """Load and encode logo image"""
+    logo_path = Path("logo/logo.png")
+    if logo_path.exists():
+        with open(logo_path, "rb") as f:
+            return base64.b64encode(f.read()).decode()
+    return None
+
+LOGO_BASE64 = load_logo()
 
 # Page config
 st.set_page_config(page_title="KHSolar - Solar Planning Software", page_icon="☀️", layout="wide")
@@ -373,11 +395,80 @@ TRANSLATIONS = {
         # Navigation
         'nav_title': '☀️ KHSolar',
         'nav_dashboard': '🏠 Dashboard',
-        'nav_devices': '⚡ Devices',
-        'nav_system': '🔧 System Config',
-        'nav_products': '🛒 Products',
-        'nav_simulation': '📊 Simulation',
-        'nav_reports': '📈 Reports',
+        'nav_devices': '📱 Device Management',
+        'nav_system': '⚙️ System Configuration',
+        'nav_products': '📦 Product Catalog',
+        'individual_products': '🛍️ Individual Products',
+        'complete_system_sets': '📦 Complete System Sets',
+        'filter_category': 'Filter by Category',
+        'all_products': '🌐 All Products',
+        'solar_panels': '☀️ Solar Panels',
+        'inverters': '⚡ Inverters',
+        'batteries': '🔋 Batteries',
+        'water_pumps': '💧 Water Pumps',
+        'accessories': '🔧 Accessories & Materials',
+        'total_products': 'Total Products',
+        'search': '🔍 Search',
+        'showing_products': 'Showing {count} Products',
+        'wholesale': 'Wholesale',
+        'retail': 'Retail',
+        'product_details': '📋 Product Details',
+        'category': 'Category',
+        'supplier': 'Supplier',
+        'warranty': 'Warranty',
+        'years': 'years',
+        'specifications': '⚙️ Specifications',
+        'pricing': '💰 Pricing',
+        'pricing_note': '💡 **Pricing Note:** Wholesale prices are base costs. Retail prices include 30% markup for customer quotes.',
+        'ready_install_packages': '📦 Ready-to-Install System Packages',
+        'complete_solar_desc': 'Complete solar system sets with all components, materials, and installation',
+        'system_performance': '📊 System Performance',
+        'daily_generation': 'Daily Generation',
+        'backup_time': 'Backup Time',
+        'recommended_load': 'Recommended Load',
+        'component_specs': '🔧 Component Specifications',
+        'model': 'Model',
+        'total_power': 'Total Power',
+        'power_panel': 'Power/Panel',
+        'efficiency': 'Efficiency',
+        'size': 'Size',
+        'weight': 'Weight',
+        'area_needed': 'Area Needed',
+        'power': 'Power',
+        'type': 'Type',
+        'max_pv_input': 'Max PV Input',
+        'mppt_trackers': 'MPPT Trackers',
+        'max_charge': 'Max Charge',
+        'battery_voltage': 'Battery Voltage',
+        'phases': 'Phases',
+        'battery_storage': '🔋 Battery Storage',
+        'capacity_unit': 'Capacity/Unit',
+        'voltage': 'Voltage',
+        'cycle_life': 'Cycle Life',
+        'usable_energy': 'Usable Energy',
+        'complete_pricing': '💰 Complete System Pricing',
+        'detailed_breakdown': '📊 Detailed Cost Breakdown',
+        'main_equipment': 'Main Equipment',
+        'equipment_subtotal': 'Equipment Subtotal',
+        'mounting_materials': 'Mounting & Materials',
+        'rails': 'Rails',
+        'clamps': 'Clamps (Mid + End)',
+        'connectors_feet': 'Connectors & L-Feet',
+        'pv_cables': 'PV Cables',
+        'materials_subtotal': 'Materials Subtotal',
+        'installation': 'Installation',
+        'labor': 'Labor',
+        'complexity_factor': 'Complexity Factor',
+        'labor_subtotal': 'Labor Subtotal',
+        'final_pricing': '💵 Final Pricing',
+        'wholesale_price': '💼 Wholesale Price',
+        'retail_price': '🏷️ Retail Price',
+        'price_per_kw': 'Price per kW',
+        'whats_included': '📋 What\'s Included',
+        'all_sets_include': '✅ **All system sets include:** Complete equipment, materials, installation labor, and 1-year service warranty',
+        'nav_simulation': '🔄 24-Hour Simulation',
+        'nav_reports': '📊 Reports & Export',
+        'nav_technician': '🔧 Technician Calculator',
         
         # Dashboard
         'dash_title': '☀️ KHSolar - Solar Planning & Business Software',
@@ -395,13 +486,13 @@ TRANSLATIONS = {
         'save_customer_info': '💾 Save Customer Information',
         'edit_info': '✏️ Edit Info',
         'contact_details': '📞 Contact Details',
-        'total_devices': '⚡ Total Devices',
+        'total_devices': '📱 Total Devices',
         'daily_consumption': '🔋 Daily Consumption',
         'system_cost': '💰 System Cost',
         'self_sufficiency': '🎯 Self Sufficiency',
         
         # Devices
-        'device_management': '⚡ Device Management',
+        'device_management': '📱 Device Management',
         'device_subtitle': 'Manage your household and business electrical devices',
         'add_device': '➕ Add Device',
         'device_list': '📋 Device List',
@@ -416,7 +507,7 @@ TRANSLATIONS = {
         'add_devices': '➕ Add Device(s)',
         
         # System Config
-        'system_config': '🔧 System Configuration',
+        'system_config': '⚙️ System Configuration',
         'system_subtitle': 'Configure your solar system or use auto-recommendations based on your devices',
         'auto_recommendations': '🤖 Auto-Calculated Recommendations',
         'based_on_devices': 'Based on {} devices with {:.2f} kWh/day load',
@@ -438,6 +529,34 @@ TRANSLATIONS = {
         'inverter_model': 'Inverter Model',
         'power_rating': 'Power Rating (kW)',
         'save_config': '💾 Save {} Configuration',
+        
+        # Technician Calculator
+        'tech_calc': '🔧 Technician Calculator',
+        'tech_subtitle': 'Professional tools for electrical calculations and wire sizing',
+        'ohms_law': '⚡ Ohm\'s Law Calculator',
+        'wire_sizing': '📏 Wire Sizing Calculator',
+        'voltage_drop': '📉 Voltage Drop Calculator',
+        'power_calc': '💡 Power Calculator',
+        'battery_calc': '🔋 Battery Calculator',
+        'solar_calc': '☀️ Solar Array Calculator',
+        'calculate': '🧮 Calculate',
+        'result': '📊 Result',
+        'voltage_v': 'Voltage (V)',
+        'current_a': 'Current (A)',
+        'power_w': 'Power (W)',
+        'resistance_ohm': 'Resistance (Ω)',
+        'wire_length': 'Wire Length (m)',
+        'wire_gauge': 'Wire Gauge (AWG)',
+        'max_current': 'Maximum Current (A)',
+        'voltage_drop_percent': 'Voltage Drop (%)',
+        'recommended_wire': 'Recommended Wire Size',
+        'battery_capacity': 'Battery Capacity (Ah)',
+        'discharge_time': 'Discharge Time (hours)',
+        'dod': 'Depth of Discharge (%)',
+        'panel_voltage': 'Panel Voltage (V)',
+        'panel_current': 'Panel Current (A)',
+        'num_panels': 'Number of Panels',
+        'series_parallel': 'Series/Parallel Configuration',
         'optimal_sizing': '✅ Optimal sizing',
         
         # Simulation
@@ -496,7 +615,7 @@ TRANSLATIONS = {
         'quick_start_guide': '🚀 Quick Start Guide',
         'step_add_devices': '⚡ Add Devices',
         'step_add_devices_desc': 'Input your electrical appliances',
-        'step_configure_system': '🔧 Configure System',
+        'step_configure_system': '⚙️ Configure System',
         'step_configure_desc': 'Set up panels, battery & inverter',
         'step_browse_products': '🛒 Browse Products',
         'step_browse_desc': 'Explore equipment options',
@@ -611,11 +730,80 @@ TRANSLATIONS = {
         # Navigation
         'nav_title': '☀️ KHSolar',
         'nav_dashboard': '🏠 ផ្ទាំងគ្រប់គ្រង',
-        'nav_devices': '⚡ ឧបករណ៍',
-        'nav_system': '🔧 ការកំណត់ប្រព័ន្ធ',
-        'nav_products': '🛒 ផលិតផល',
-        'nav_simulation': '📊 ការវិភាគ',
-        'nav_reports': '📈 របាយការណ៍',
+        'nav_devices': '📱 គ្រប់គ្រងឧបករណ៍',
+        'nav_system': '⚙️ ការកំណត់រចនាសម្ព័ន្ធ',
+        'nav_products': '📦 កាតាឡុកផលិតផល',
+        'individual_products': '🛍️ ផលិតផលបុគ្គល',
+        'complete_system_sets': '📦 សំណុំប្រព័ន្ធពេញលេញ',
+        'filter_category': 'ច្រោះតាមប្រភេទ',
+        'all_products': '🌐 ផលិតផលទាំងអស់',
+        'solar_panels': '☀️ បន្ទះសូឡា',
+        'inverters': '⚡ អ៊ីនវឺរទ័រ',
+        'batteries': '🔋 ថ្ម',
+        'water_pumps': '💧 ម៉ាស៊ីនបូមទឹក',
+        'accessories': '🔧 គ្រឿងបន្លាស់ និងសម្ភារៈ',
+        'total_products': 'ផលិតផលសរុប',
+        'search': '🔍 ស្វែងរក',
+        'showing_products': 'បង្ហាញផលិតផល {count}',
+        'wholesale': 'តម្លៃលក់ដុំ',
+        'retail': 'តម្លៃលក់រាយ',
+        'product_details': '📋 ព័ត៌មានលម្អិត',
+        'category': 'ប្រភេទ',
+        'supplier': 'អ្នកផ្គត់ផ្គង់',
+        'warranty': 'ការធានា',
+        'years': 'ឆ្នាំ',
+        'specifications': '⚙️ លក្ខណៈបច្ចេកទេស',
+        'pricing': '💰 តម្លៃ',
+        'pricing_note': '💡 **ចំណាំតម្លៃ:** តម្លៃលក់ដុំគឺជាតម្លៃមូលដ្ឋាន។ តម្លៃលក់រាយរួមបញ្ចូល 30% សម្រាប់សម្រង់អតិថិជន។',
+        'ready_install_packages': '📦 កញ្ចប់ប្រព័ន្ធរួចរាល់ដំឡើង',
+        'complete_solar_desc': 'សំណុំប្រព័ន្ធសូឡាពេញលេញជាមួយគ្រឿងបរិក្ខារ សម្ភារៈ និងការដំឡើង',
+        'system_performance': '📊 ការអនុវត្តប្រព័ន្ធ',
+        'daily_generation': 'ការផលិតប្រចាំថ្ងៃ',
+        'backup_time': 'ពេលវេលាបម្រុងទុក',
+        'recommended_load': 'ការប្រើប្រាស់ណែនាំ',
+        'component_specs': '🔧 លក្ខណៈបច្ចេកទេសគ្រឿង',
+        'model': 'ម៉ូដែល',
+        'total_power': 'ថាមពលសរុប',
+        'power_panel': 'ថាមពល/បន្ទះ',
+        'efficiency': 'ប្រសិទ្ធភាព',
+        'size': 'ទំហំ',
+        'weight': 'ទម្ងន់',
+        'area_needed': 'ទំហំតម្រូវការ',
+        'power': 'ថាមពល',
+        'type': 'ប្រភេទ',
+        'max_pv_input': 'PV បញ្ចូលអតិបរមា',
+        'mppt_trackers': 'MPPT Trackers',
+        'max_charge': 'សាកអតិបរមា',
+        'battery_voltage': 'វ៉ុលថ្ម',
+        'phases': 'ដំណាក់កាល',
+        'battery_storage': '🔋 ការផ្ទុកថ្ម',
+        'capacity_unit': 'ចំណុះ/ឯកតា',
+        'voltage': 'វ៉ុល',
+        'cycle_life': 'អាយុកាលវដ្ត',
+        'usable_energy': 'ថាមពលប្រើបាន',
+        'complete_pricing': '💰 តម្លៃប្រព័ន្ធពេញលេញ',
+        'detailed_breakdown': '📊 ការបែងចែកលម្អិត',
+        'main_equipment': 'គ្រឿងបរិក្ខារសំខាន់',
+        'equipment_subtotal': 'សរុបគ្រឿងបរិក្ខារ',
+        'mounting_materials': 'សម្ភារៈដំឡើង',
+        'rails': 'ផ្លូវរថភ្លើង',
+        'clamps': 'តង្កៀប (កណ្តាល + ចុង)',
+        'connectors_feet': 'ឧបករណ៍ភ្ជាប់ & L-Feet',
+        'pv_cables': 'ខ្សែ PV',
+        'materials_subtotal': 'សរុបសម្ភារៈ',
+        'installation': 'ការដំឡើង',
+        'labor': 'ការងារ',
+        'complexity_factor': 'កត្តាស្មុគស្មាញ',
+        'labor_subtotal': 'សរុបការងារ',
+        'final_pricing': '💵 តម្លៃចុងក្រោយ',
+        'wholesale_price': '💼 តម្លៃលក់ដុំ',
+        'retail_price': '🏷️ តម្លៃលក់រាយ',
+        'price_per_kw': 'តម្លៃក្នុងមួយ kW',
+        'whats_included': '📋 អ្វីដែលរួមបញ្ចូល',
+        'all_sets_include': '✅ **សំណុំទាំងអស់រួមបញ្ចូល:** គ្រឿងបរិក្ខារពេញលេញ សម្ភារៈ ការងារដំឡើង និងការធានា 1 ឆ្នាំ',
+        'nav_simulation': '🔄 ការក្លែងធ្វើ 24 ម៉ោង',
+        'nav_reports': '📊 របាយការណ៍ និងនាំចេញ',
+        'nav_technician': '🔧 ម៉ាស៊ីនគណនាបច្ចេកទេស',
         
         # Dashboard
         'dash_title': '☀️ KHSolar - កម្មវិធីរចនាប្រព័ន្ធថាមពលពន្លឺព្រះអាទិត្យ និងគ្រប់គ្រងអាជីវកម្ម',
@@ -964,80 +1152,73 @@ def t(key):
     return TRANSLATIONS[st.session_state.language].get(key, key)
 
 # ==================== SIDEBAR - ONE PAGE DESIGN ====================
-# Compact Sidebar Header with Logo
-st.sidebar.markdown("""
-<div style='
-    text-align: center;
-    padding: 1rem 0.5rem 0.75rem 0.5rem;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border-radius: 10px;
-    margin-bottom: 1rem;
-    box-shadow: 0 3px 10px rgba(102, 126, 234, 0.2);
-'>
-    <div style='font-size: 2.2rem; margin-bottom: 0.2rem;'>☀️</div>
-    <div style='color: white; font-size: 1.2rem; font-weight: 800; letter-spacing: 0.5px;'>KHSolar</div>
-    <div style='color: rgba(255,255,255,0.85); font-size: 0.65rem; font-weight: 500; margin-top: 0.1rem;'>Solar Designer</div>
+# Compact Sidebar Header with Logo (No Background)
+if LOGO_BASE64:
+    logo_html = f'<img src="data:image/png;base64,{LOGO_BASE64}" style="max-width: 120px; width: 100%; height: auto;">'
+else:
+    logo_html = '<div style="font-size: 1.8rem;"></div>'
+
+st.sidebar.markdown(f"""
+<div style='text-align: center; padding: 0.5rem 0; margin-bottom: 0.5rem;'>
+    {logo_html}
+    <div style='color: #667eea; font-size: 1.1rem; font-weight: 800; margin-top: 0.3rem;'>KHSolar - Solar Designer</div>
 </div>
 """, unsafe_allow_html=True)
 
-# VIP Login Button and Status
-if not st.session_state.is_vip and not st.session_state.vip_logged_in:
-    # Show VIP Login button
-    if st.sidebar.button("👑 VIP Login", use_container_width=True, type="primary"):
-        st.session_state.show_vip_login = True
-        st.rerun()
-elif st.session_state.vip_logged_in:
-    # Show VIP status for logged in users
-    st.sidebar.markdown(f"""
-    <div style='background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
-                padding: 0.5rem; border-radius: 0.5rem; text-align: center; margin-bottom: 0.5rem;'>
-        <div style='color: white; font-weight: 700; font-size: 0.9rem;'>👑 VIP ACCESS</div>
-        <div style='color: rgba(255,255,255,0.9); font-size: 0.7rem;'>{st.session_state.vip_username}</div>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    # Logout button
-    if st.sidebar.button("🚪 Logout", use_container_width=True):
+# VIP Status Display (Compact)
+if st.session_state.vip_logged_in:
+    st.sidebar.markdown(f"<div style='text-align: center; padding: 0.3rem; background: #f0fdf4; border-radius: 5px; margin-bottom: 0.5rem;'><span style='color: #15803d; font-weight: 600; font-size: 0.85rem;'>👑 {st.session_state.vip_username}</span></div>", unsafe_allow_html=True)
+    if st.sidebar.button("🚪 Logout", use_container_width=True, key="logout_btn"):
         st.session_state.vip_logged_in = False
         st.session_state.is_vip = False
         st.session_state.vip_username = ''
-        st.success("✅ Logged out successfully")
         st.rerun()
 elif st.session_state.is_vip:
-    # Show VIP status for auto-detected users
-    st.sidebar.markdown("""
-    <div style='background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
-                padding: 0.5rem; border-radius: 0.5rem; text-align: center; margin-bottom: 0.5rem;'>
-        <div style='color: white; font-weight: 700; font-size: 0.9rem;'>👑 VIP ACCESS</div>
-        <div style='color: rgba(255,255,255,0.9); font-size: 0.7rem;'>All Features Unlocked</div>
-    </div>
-    """, unsafe_allow_html=True)
+    st.sidebar.markdown("<div style='text-align: center; padding: 0.3rem; background: #f0fdf4; border-radius: 5px; margin-bottom: 0.5rem;'><span style='color: #15803d; font-weight: 600; font-size: 0.85rem;'>👑 VIP</span></div>", unsafe_allow_html=True)
+else:
+    if st.sidebar.button("👑 VIP Login", use_container_width=True, type="primary", key="vip_login_btn"):
+        st.session_state.show_vip_login = True
+        st.rerun()
 
-# Navigation Menu - VIP features unlocked for VIP users
+# Navigation Menu - Compact
 if st.session_state.is_vip or st.session_state.vip_logged_in:
-    # VIP users see all features without locks
     page = st.sidebar.radio("📍 Navigate", [
         t('nav_dashboard'),
         t('nav_devices'),
         t('nav_system'),
         t('nav_products'),
         t('nav_simulation'),
-        t('nav_reports')
-    ], label_visibility="visible")
+        t('nav_reports'),
+        t('nav_technician')
+    ], label_visibility="collapsed")
 else:
-    # Non-VIP users see locked features
     page = st.sidebar.radio("📍 Navigate", [
         t('nav_dashboard'),
         t('nav_devices') + " 🔒",
         t('nav_system') + " 🔒",
         t('nav_products') + " 🔒",
         t('nav_simulation') + " 🔒",
-        t('nav_reports') + " 🔒"
-    ], label_visibility="visible")
+        t('nav_reports') + " 🔒",
+        t('nav_technician') + " 🔒"
+    ], label_visibility="collapsed")
     
-    # Check if user trying to access VIP features
+    # Check if user trying to access locked features - Show popup
     if "🔒" in page:
-        st.warning("🔒 **VIP Feature** - This feature is only available for VIP users. Contact admin: +855888836588 or @chhanycls")
+        @st.dialog("🔒 VIP Feature Locked")
+        def show_vip_required():
+            st.warning("**This feature is only available for VIP users.**")
+            st.info("📞 Contact admin: **+855888836588** or **@chhanycls**")
+            
+            col1, col2 = st.columns(2)
+            with col1:
+                if st.button("👑 Login as VIP", use_container_width=True, type="primary"):
+                    st.session_state.show_vip_login = True
+                    st.rerun()
+            with col2:
+                if st.button("← Back", use_container_width=True):
+                    st.rerun()
+        
+        show_vip_required()
         page = t('nav_dashboard')  # Redirect to dashboard
 
 st.sidebar.markdown("<div style='margin: 0.75rem 0;'><hr style='margin: 0; border: none; border-top: 1px solid #e5e7eb;'></div>", unsafe_allow_html=True)
@@ -1068,81 +1249,41 @@ with lang_col2:
         st.session_state.language = 'kh'
         st.rerun()
 
+# VIP Login Popup Dialog (Global - works on any page)
+if st.session_state.show_vip_login:
+    @st.dialog("👑 VIP Login")
+    def vip_login_popup():
+        st.markdown("**Access Premium Features**")
+        
+        username = st.text_input("👤 Username", placeholder="Enter your username", key="vip_user_popup")
+        password = st.text_input("🔒 Password", type="password", placeholder="Enter your password", key="vip_pass_popup")
+        
+        col_a, col_b = st.columns(2)
+        with col_a:
+            if st.button("🔓 Login", type="primary", use_container_width=True):
+                if username and password:
+                    if verify_vip_login(username, password):
+                        st.session_state.vip_logged_in = True
+                        st.session_state.is_vip = True
+                        st.session_state.vip_username = username
+                        st.session_state.show_vip_login = False
+                        st.success(f"✅ Welcome, {username}!")
+                        st.rerun()
+                    else:
+                        st.error("❌ Invalid credentials")
+                else:
+                    st.warning("⚠️ Enter username and password")
+        with col_b:
+            if st.button("Cancel", use_container_width=True):
+                st.session_state.show_vip_login = False
+                st.rerun()
+        
+        st.info("📞 Contact: **+855888836588** or **@chhanycls**")
+    
+    vip_login_popup()
+
 # ==================== DASHBOARD ====================
 if page == t('nav_dashboard'):
-    # VIP Login Popup Modal
-    if st.session_state.show_vip_login:
-        # Login form in centered container with better styling
-        col1, col2, col3 = st.columns([1, 2, 1])
-        with col2:
-            st.markdown("""
-            <div style='
-                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                padding: 2.5rem;
-                border-radius: 20px;
-                box-shadow: 0 20px 60px rgba(102, 126, 234, 0.4);
-                margin-top: 3rem;
-                border: 3px solid rgba(255, 255, 255, 0.3);
-            '>
-                <div style='text-align: center; margin-bottom: 2rem;'>
-                    <div style='font-size: 4rem; margin-bottom: 0.5rem;'>👑</div>
-                    <h1 style='color: white; margin: 0; font-size: 2rem; font-weight: 800; text-shadow: 2px 2px 4px rgba(0,0,0,0.2);'>VIP Login</h1>
-                    <p style='color: rgba(255,255,255,0.95); margin: 0.5rem 0 0 0; font-size: 1rem;'>Access Premium Features</p>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            # White card for form
-            st.markdown("""
-            <div style='
-                background: white;
-                padding: 2rem;
-                border-radius: 15px;
-                margin-top: -1rem;
-                box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            '>
-            </div>
-            """, unsafe_allow_html=True)
-            
-            with st.form("vip_login_form", clear_on_submit=True):
-                st.markdown("<h3 style='color: #667eea; margin-bottom: 1.5rem; text-align: center;'>Enter Your Credentials</h3>", unsafe_allow_html=True)
-                
-                username = st.text_input("👤 Username", placeholder="Enter your username", key="vip_user")
-                password = st.text_input("🔒 Password", type="password", placeholder="Enter your password", key="vip_pass")
-                
-                st.markdown("<div style='height: 1rem;'></div>", unsafe_allow_html=True)
-                
-                col_a, col_b = st.columns(2)
-                with col_a:
-                    submit = st.form_submit_button("🔓 Login", type="primary", use_container_width=True)
-                with col_b:
-                    cancel = st.form_submit_button("❌ Cancel", use_container_width=True)
-                
-                if submit:
-                    if username and password:
-                        if verify_vip_login(username, password):
-                            st.session_state.vip_logged_in = True
-                            st.session_state.is_vip = True
-                            st.session_state.vip_username = username
-                            st.session_state.show_vip_login = False
-                            st.success(f"✅ Welcome, {username}! VIP access granted.")
-                            st.balloons()
-                            st.rerun()
-                        else:
-                            st.error("❌ Invalid username or password")
-                    else:
-                        st.warning("⚠️ Please enter both username and password")
-                
-                if cancel:
-                    st.session_state.show_vip_login = False
-                    st.rerun()
-            
-            st.markdown("""
-            <div style='text-align: center; margin-top: 1.5rem; padding: 1rem; background: #f8f9fa; border-radius: 10px;'>
-                <p style='color: #667eea; margin: 0; font-size: 0.9rem; font-weight: 600;'>🔒 Secure Authentication</p>
-                <p style='color: #666; margin: 0.3rem 0 0 0; font-size: 0.8rem;'>Your credentials are encrypted and protected</p>
-            </div>
-            """, unsafe_allow_html=True)
     
     # Remove top hero section completely to save space
     
@@ -3507,58 +3648,1117 @@ elif page == t('nav_system'):
                 st.metric("Cost per kW", f"${cost_per_kw:,.2f}/kW")
 
 # ==================== PRODUCTS ====================
-elif page == "🛒 Products":
-    st.title("🛒 Product Catalog")
-    st.markdown("#### Browse all products from your wholesale price list")
+elif page == t('nav_products'):
+    st.title("📦 Product Catalog & System Sets")
+    st.markdown("#### Complete product pricing with specifications and ready-to-install system packages")
     
     pm = st.session_state.product_manager
     
-    # Get all unique categories
-    all_categories = sorted(set(p.category for p in pm.products.values()))
-    category_options = ["All"] + all_categories
+    # Initialize session state for pricing control
+    if 'price_markup' not in st.session_state:
+        st.session_state.price_markup = 30.0
+    if 'hide_wholesale' not in st.session_state:
+        st.session_state.hide_wholesale = False
+    if 'admin_authenticated' not in st.session_state:
+        st.session_state.admin_authenticated = False
+    if 'show_admin_panel' not in st.session_state:
+        st.session_state.show_admin_panel = False
     
-    col1, col2 = st.columns([2, 1])
-    with col1:
-        category = st.selectbox("Filter by Category", category_options)
-    with col2:
-        st.metric("Total Products", len(pm.products))
+    # ========== PRICING CONTROL PANEL (PASSWORD PROTECTED) ==========
+    # Admin panel toggle button (clean, no header)
+    col_btn1, col_btn2, col_btn3 = st.columns([1, 1, 1])
+    with col_btn1:
+        if st.button("🔐 Admin Pricing Control" if not st.session_state.show_admin_panel else "✖️ Close Admin Panel", 
+                     use_container_width=True, 
+                     type="primary" if not st.session_state.show_admin_panel else "secondary"):
+            st.session_state.show_admin_panel = not st.session_state.show_admin_panel
+            if not st.session_state.show_admin_panel:
+                st.session_state.admin_authenticated = False
     
-    # Filter products
-    products = list(pm.products.values()) if category == "All" else pm.get_products_by_category(category)
-    
-    # Display category summary
-    if category == "All":
-        st.markdown("### 📊 Category Summary")
-        summary_cols = st.columns(4)
-        for idx, cat in enumerate(all_categories[:4]):
-            with summary_cols[idx]:
-                cat_products = pm.get_products_by_category(cat)
-                st.metric(f"{cat.replace('_', ' ').title()}", len(cat_products))
-    
-    st.markdown(f"### Showing {len(products)} Products")
-    
-    # Display products in a more organized way
-    for p in products:
-        with st.expander(f"💰 {p.name} - ${p.cost:,.2f} (Wholesale)"):
-            col1, col2 = st.columns(2)
-            with col1:
-                st.markdown(f"**Category:** {p.category.replace('_', ' ').title()}")
-                st.markdown(f"**Supplier:** {p.supplier}")
-                st.markdown(f"**Warranty:** {p.warranty_years} years")
-                if p.notes:
-                    st.info(f"ℹ️ {p.notes}")
-            with col2:
-                st.markdown("**Specifications:**")
-                for key, value in p.specifications.items():
-                    st.write(f"• {key.replace('_', ' ').title()}: {value}")
+    # Show admin panel if toggled
+    if st.session_state.show_admin_panel:
+        if not st.session_state.admin_authenticated:
+            # Password authentication using popup dialog
+            @st.dialog("🔒 Admin Authentication")
+            def password_dialog():
+                st.markdown("**Enter admin password to access pricing controls**")
+                admin_password = st.text_input("🔑 Password", type="password", key="admin_pwd_popup")
                 
-                # Show customer price with 30% markup
-                customer_price = p.cost * 1.3
-                st.success(f"💵 Customer Price: ${customer_price:,.2f} (+30%)")
+                col1, col2 = st.columns(2)
+                with col1:
+                    if st.button("🔓 Unlock", use_container_width=True, type="primary"):
+                        if admin_password == "admin123":
+                            st.session_state.admin_authenticated = True
+                            st.success("✅ Access granted!")
+                            st.rerun()
+                        else:
+                            st.error("❌ Incorrect password")
+                with col2:
+                    if st.button("Cancel", use_container_width=True):
+                        st.session_state.show_admin_panel = False
+                        st.rerun()
+            
+            password_dialog()
+        else:
+            # Admin controls (authenticated)
+            st.markdown("""
+            <div style='background: linear-gradient(135deg, #d4fc79 0%, #96e6a1 100%); 
+                        padding: 1rem; border-radius: 8px; margin: 1rem 0;
+                        border-left: 4px solid #10b981;'>
+                <p style='margin: 0; color: #065f46; font-weight: 600;'>
+                    ✅ Admin Access Granted - Pricing Controls Active
+                </p>
+            </div>
+            """, unsafe_allow_html=True)
+            
+            # Simple and clean control layout
+            ctrl_col1, ctrl_col2 = st.columns(2)
+            
+            with ctrl_col1:
+                st.markdown("#### 💰 Markup Control")
+                markup_percentage = st.slider(
+                    "Retail Markup (%)",
+                    min_value=0,
+                    max_value=100,
+                    value=int(st.session_state.price_markup),
+                    step=5,
+                    help="Adjust retail price markup percentage"
+                )
+                st.session_state.price_markup = float(markup_percentage)
+                
+                # Show example
+                example_cost = 1000.00
+                example_retail = example_cost * (1 + markup_percentage / 100)
+                st.info(f"**Example:** ${example_cost:,.0f} → ${example_retail:,.0f} (+{markup_percentage}%)")
+            
+            with ctrl_col2:
+                st.markdown("#### 🔒 Display Settings")
+                hide_wholesale = st.toggle(
+                    "Hide Wholesale Prices from Customers",
+                    value=st.session_state.hide_wholesale,
+                    help="When enabled, customers only see retail prices"
+                )
+                st.session_state.hide_wholesale = hide_wholesale
+                
+                # Show status
+                if hide_wholesale:
+                    st.warning("🚫 **Wholesale prices are HIDDEN**")
+                else:
+                    st.success("✅ **Wholesale prices are VISIBLE**")
+            
+            # Quick stats
+            st.markdown("---")
+            stat_col1, stat_col2, stat_col3 = st.columns(3)
+            with stat_col1:
+                st.metric("Current Markup", f"{markup_percentage}%", delta=f"{markup_percentage-30}%" if markup_percentage != 30 else "Default")
+            with stat_col2:
+                st.metric("Wholesale Display", "Hidden" if hide_wholesale else "Visible")
+            with stat_col3:
+                if st.button("🔄 Reset to Default", use_container_width=True):
+                    st.session_state.price_markup = 30.0
+                    st.session_state.hide_wholesale = False
+                    st.success("✅ Reset to default settings!")
+                    st.rerun()
     
-    # Show note about pricing
-    st.markdown("---")
-    st.info("💡 **Pricing Note:** Wholesale prices are shown. Customer reports include a 30% markup for retail pricing.")
+    # Main tabs for Products, System Sets, and Water Pump Sets
+    main_tab1, main_tab2, main_tab3 = st.tabs([t('individual_products'), t('complete_system_sets'), "💧 Water Pump Sets"])
+    
+    # ========== TAB 1: INDIVIDUAL PRODUCTS ==========
+    with main_tab1:
+        # Category filter with icons
+        category_map = {
+            "All": t('all_products'),
+            "solar_panel": t('solar_panels'),
+            "inverter": t('inverters'),
+            "battery": t('batteries'),
+            "water_pump": t('water_pumps'),
+            "accessories": t('accessories')
+        }
+        
+        col1, col2, col3 = st.columns([2, 1, 1])
+        with col1:
+            category = st.selectbox(t('filter_category'), 
+                                   list(category_map.keys()),
+                                   format_func=lambda x: category_map[x])
+        with col2:
+            st.metric(t('total_products'), len(pm.products))
+        with col3:
+            search = st.text_input(t('search'), placeholder="Product name...")
+        
+        # Filter products
+        if category == "All":
+            products = list(pm.products.values())
+        else:
+            products = pm.get_products_by_category(category)
+        
+        # Apply search filter
+        if search:
+            products = [p for p in products if search.lower() in p.name.lower()]
+        
+        st.markdown(f"### {t('showing_products').format(count=len(products))}")
+        
+        # Product image mapping (real product images)
+        product_images = {
+            # Deye Inverters
+            "Deye Hybrid 5kw EU 1P": "https://m.media-amazon.com/images/I/61VH9YqVZlL._AC_SL1500_.jpg",
+            "Deye Hybrid 8kw EU 1P": "https://m.media-amazon.com/images/I/61VH9YqVZlL._AC_SL1500_.jpg",
+            "Deye 16kw EP 1P": "https://m.media-amazon.com/images/I/61VH9YqVZlL._AC_SL1500_.jpg",
+            "Deye 10kw eu 1P Low Voltage": "https://m.media-amazon.com/images/I/61VH9YqVZlL._AC_SL1500_.jpg",
+            "Deye 10kw eu 3P Low Voltage": "https://m.media-amazon.com/images/I/61VH9YqVZlL._AC_SL1500_.jpg",
+            "Deye 12kw eu 3P Low Voltage": "https://m.media-amazon.com/images/I/61VH9YqVZlL._AC_SL1500_.jpg",
+            "Deye 20kw eu 3P Low Voltage": "https://m.media-amazon.com/images/I/61VH9YqVZlL._AC_SL1500_.jpg",
+            "Deye 20kw eu 3P High Voltage": "https://m.media-amazon.com/images/I/61VH9YqVZlL._AC_SL1500_.jpg",
+            "Deye 30kw eu 3p": "https://m.media-amazon.com/images/I/61VH9YqVZlL._AC_SL1500_.jpg",
+            "Deye 40kw eu 3p": "https://m.media-amazon.com/images/I/61VH9YqVZlL._AC_SL1500_.jpg",
+            "Deye 50kw eu 3p": "https://m.media-amazon.com/images/I/61VH9YqVZlL._AC_SL1500_.jpg",
+            
+            # Solar Panels
+            "Lvtopsun 340W": "https://m.media-amazon.com/images/I/61qL8ZxGvEL._AC_SL1500_.jpg",
+            "Lvtopsun 550W": "https://m.media-amazon.com/images/I/61qL8ZxGvEL._AC_SL1500_.jpg",
+            "Lvtopsun 620W": "https://m.media-amazon.com/images/I/61qL8ZxGvEL._AC_SL1500_.jpg",
+            "LONGi Panel 360w": "https://m.media-amazon.com/images/I/71KqVH8XJNL._AC_SL1500_.jpg",
+            "LONGi Panel 585w": "https://m.media-amazon.com/images/I/71KqVH8XJNL._AC_SL1500_.jpg",
+            
+            # Batteries
+            "DEYE 100AH 51.2v (5.12KWH)": "https://m.media-amazon.com/images/I/61J8vZ9HPNL._AC_SL1500_.jpg",
+            "DEYE Battery Controller": "https://m.media-amazon.com/images/I/61J8vZ9HPNL._AC_SL1500_.jpg",
+            "LVtopsun-51.2V100AH Lithium": "https://m.media-amazon.com/images/I/61J8vZ9HPNL._AC_SL1500_.jpg",
+            "LVtopsun-51.2V200AH Lithium": "https://m.media-amazon.com/images/I/61J8vZ9HPNL._AC_SL1500_.jpg",
+            "LVtopsun-51.2V300AH Lithium": "https://m.media-amazon.com/images/I/61J8vZ9HPNL._AC_SL1500_.jpg",
+            "LVtopsun-51.2V100AH Lithium HV": "https://m.media-amazon.com/images/I/61J8vZ9HPNL._AC_SL1500_.jpg",
+            "LV 100AH 12V GEL": "https://m.media-amazon.com/images/I/71qYMXqVBOL._AC_SL1500_.jpg",
+            "LV 150AH 12V GEL BATTERY": "https://m.media-amazon.com/images/I/71qYMXqVBOL._AC_SL1500_.jpg",
+            "LV 200AH 12V GEL BATTERY": "https://m.media-amazon.com/images/I/71qYMXqVBOL._AC_SL1500_.jpg",
+            "LV 250AH 12V GEL BATTERY": "https://m.media-amazon.com/images/I/71qYMXqVBOL._AC_SL1500_.jpg",
+            
+            # Sungrow Inverters
+            "Sungrow SG33CX-P2": "https://m.media-amazon.com/images/I/61-8zXqXqBL._AC_SL1500_.jpg",
+            "Sungrow SG40CX-P2": "https://m.media-amazon.com/images/I/61-8zXqXqBL._AC_SL1500_.jpg",
+            "Sungrow SG50CX-P2": "https://m.media-amazon.com/images/I/61-8zXqXqBL._AC_SL1500_.jpg",
+            "Sungrow SG125CX-P2": "https://m.media-amazon.com/images/I/61-8zXqXqBL._AC_SL1500_.jpg",
+            "Sungrow SG150CX": "https://m.media-amazon.com/images/I/61-8zXqXqBL._AC_SL1500_.jpg",
+            "Sungrow 250KW": "https://m.media-amazon.com/images/I/61-8zXqXqBL._AC_SL1500_.jpg",
+            
+            # Solis Inverters
+            "Solis Ongrid Inverter 5kw": "https://m.media-amazon.com/images/I/61kZxH8XJNL._AC_SL1500_.jpg",
+            "Solis Ongrid Inverter 10kw": "https://m.media-amazon.com/images/I/61kZxH8XJNL._AC_SL1500_.jpg",
+            "Solis Ongrid Inverter 20kw": "https://m.media-amazon.com/images/I/61kZxH8XJNL._AC_SL1500_.jpg",
+            "Solis Ongrid Inverter 40kw": "https://m.media-amazon.com/images/I/61kZxH8XJNL._AC_SL1500_.jpg",
+            
+            # Water Pumps
+            "3DPC5.2-50-48-600W": "https://m.media-amazon.com/images/I/61xqL8ZxGvEL._AC_SL1500_.jpg",
+            "4DPC9-45-110-750W": "https://m.media-amazon.com/images/I/61xqL8ZxGvEL._AC_SL1500_.jpg",
+            "3DPC6-84-110-1100W": "https://m.media-amazon.com/images/I/61xqL8ZxGvEL._AC_SL1500_.jpg",
+            "4DPC9-85-110-1500W": "https://m.media-amazon.com/images/I/61xqL8ZxGvEL._AC_SL1500_.jpg",
+            "4DSC19-60-300-2200W": "https://m.media-amazon.com/images/I/61xqL8ZxGvEL._AC_SL1500_.jpg",
+            "4DSC19-98-380/550-3000W": "https://m.media-amazon.com/images/I/61xqL8ZxGvEL._AC_SL1500_.jpg",
+            "4DSC19-135-380/550-4000W": "https://m.media-amazon.com/images/I/61xqL8ZxGvEL._AC_SL1500_.jpg",
+            "DCPM21-14-72-750W": "https://m.media-amazon.com/images/I/61xqL8ZxGvEL._AC_SL1500_.jpg",
+            "DCPM50-17-110-1500W": "https://m.media-amazon.com/images/I/61xqL8ZxGvEL._AC_SL1500_.jpg",
+            "DCPM60-20-300-2200W-A/D": "https://m.media-amazon.com/images/I/61xqL8ZxGvEL._AC_SL1500_.jpg",
+            
+            # Accessories
+            "Rail 4.8m": "https://m.media-amazon.com/images/I/71KqVH8XJNL._AC_SL1000_.jpg",
+            "Mid clamp": "https://m.media-amazon.com/images/I/61KqVH8XJNL._AC_SL1000_.jpg",
+            "End Clamp": "https://m.media-amazon.com/images/I/61KqVH8XJNL._AC_SL1000_.jpg",
+            "LV 4mm PV CABLE 100M": "https://m.media-amazon.com/images/I/71xqL8ZxGvEL._AC_SL1000_.jpg",
+            "LV 6mm PV CABLE 100M": "https://m.media-amazon.com/images/I/71xqL8ZxGvEL._AC_SL1000_.jpg",
+        }
+        
+        # Display products in enhanced cards
+        for p in products:
+            # Determine category icon
+            cat_icon = "☀️" if "panel" in p.category.lower() else \
+                      "⚡" if "inverter" in p.category.lower() else \
+                      "🔋" if "battery" in p.category.lower() else \
+                      "💧" if "pump" in p.category.lower() else "🔧"
+            
+            customer_price = p.cost * 1.3
+            
+            # Apply markup from control panel
+            customer_price = p.cost * (1 + st.session_state.price_markup / 100)
+            
+            # Create expander title based on wholesale visibility
+            if st.session_state.hide_wholesale:
+                expander_title = f"{cat_icon} {p.name} | {t('retail')}: ${customer_price:,.2f}"
+            else:
+                expander_title = f"{cat_icon} {p.name} | {t('wholesale')}: ${p.cost:,.2f} | {t('retail')}: ${customer_price:,.2f}"
+            
+            with st.expander(expander_title):
+                col1, col2, col3, col4 = st.columns([1, 2, 2, 1])
+                
+                with col1:
+                    # Display product image using HTML img tag for better compatibility
+                    product_img = product_images.get(p.name, "https://via.placeholder.com/300x300.png?text=No+Image")
+                    st.markdown(f"""
+                    <div style='text-align: center;'>
+                        <img src='{product_img}' style='max-width: 250px; width: 100%; height: auto; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);' onerror="this.src='https://via.placeholder.com/300x300.png?text=No+Image'">
+                    </div>
+                    """, unsafe_allow_html=True)
+                    
+                with col2:
+                    st.markdown(f"""
+                    <div style='background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%); 
+                                padding: 1rem; border-radius: 8px; border-left: 4px solid #6366f1;'>
+                        <h4 style='margin: 0 0 0.5rem 0; color: #4338ca;'>{t('product_details')}</h4>
+                        <p style='margin: 0.3rem 0;'><b>{t('category')}:</b> {cat_icon} {p.category.replace('_', ' ').title()}</p>
+                        <p style='margin: 0.3rem 0;'><b>{t('supplier')}:</b> {p.supplier}</p>
+                        <p style='margin: 0.3rem 0;'><b>{t('warranty')}:</b> {p.warranty_years} {t('years')}</p>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    
+                    if p.notes:
+                        st.info(f"ℹ️ {p.notes}")
+                
+                with col3:
+                    st.markdown(f"""
+                    <div style='background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); 
+                                padding: 1rem; border-radius: 8px; border-left: 4px solid #3b82f6;'>
+                        <h4 style='margin: 0 0 0.5rem 0; color: #1e3a8a;'>{t('specifications')}</h4>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    
+                    if p.specifications:
+                        for key, value in p.specifications.items():
+                            st.write(f"• **{key.replace('_', ' ').title()}:** {value}")
+                    else:
+                        st.write("• Standard specifications")
+                    
+                    # Add area calculation for solar panels
+                    if "panel" in p.category.lower():
+                        st.markdown("---")
+                        st.info(f"📐 **Area per panel:** ~2.6 m²")
+                
+                with col4:
+                    # Show pricing based on visibility settings
+                    if st.session_state.hide_wholesale:
+                        st.markdown(f"""
+                        <div style='background: linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%); 
+                                    padding: 1rem; border-radius: 8px; border-left: 4px solid #ec4899; text-align: center;'>
+                            <h4 style='margin: 0 0 0.5rem 0; color: #9f1239;'>{t('pricing')}</h4>
+                            <p style='margin: 0.3rem 0; font-size: 0.9rem;'><b>Price:</b></p>
+                            <p style='margin: 0; font-size: 1.6rem; color: #be185d; font-weight: 700;'>${customer_price:,.2f}</p>
+                        </div>
+                        """, unsafe_allow_html=True)
+                    else:
+                        st.markdown(f"""
+                        <div style='background: linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%); 
+                                    padding: 1rem; border-radius: 8px; border-left: 4px solid #ec4899; text-align: center;'>
+                            <h4 style='margin: 0 0 0.5rem 0; color: #9f1239;'>{t('pricing')}</h4>
+                            <p style='margin: 0.3rem 0; font-size: 0.9rem;'><b>{t('wholesale')}:</b></p>
+                            <p style='margin: 0; font-size: 1.2rem; color: #9f1239; font-weight: 600;'>${p.cost:,.2f}</p>
+                            <hr style='margin: 0.5rem 0; border: 1px solid #ec4899;'>
+                            <p style='margin: 0.3rem 0; font-size: 0.9rem;'><b>{t('retail')} (+{st.session_state.price_markup:.0f}%):</b></p>
+                            <p style='margin: 0; font-size: 1.4rem; color: #be185d; font-weight: 700;'>${customer_price:,.2f}</p>
+                        </div>
+                        """, unsafe_allow_html=True)
+        
+        st.markdown("---")
+        st.info(t('pricing_note'))
+    
+    # ========== TAB 2: COMPLETE SYSTEM SETS ==========
+    with main_tab2:
+        st.markdown("### 📦 Ready-to-Install System Packages")
+        st.markdown("Complete solar system sets with all components, materials, and installation")
+        
+        # Define system sets with detailed specifications based on inverter capacity
+        # Calculation logic: PV = Inverter × 1.1-1.2, Battery = Inverter × 2 (for backup)
+        system_sets = [
+            {
+                "name": "5kW Hybrid Solar System",
+                "inverter": "Deye Hybrid 5kw EU 1P",
+                "inverter_power": 5.0,
+                "inverter_specs": {
+                    "max_pv_input": "6.5kW",
+                    "mppt_trackers": "2",
+                    "max_charge_current": "135A",
+                    "battery_voltage": "48V",
+                    "efficiency": "97.6%",
+                    "phases": "Single Phase"
+                },
+                "solar_panels": {"name": "Lvtopsun 550W", "quantity": 10, "total_kw": 5.5},
+                "panel_specs": {
+                    "power": "550W",
+                    "efficiency": "21.2%",
+                    "voltage_vmp": "41.8V",
+                    "current_imp": "13.16A",
+                    "dimensions": "2278×1134×35mm",
+                    "weight": "27.5kg"
+                },
+                "battery": {"name": "DEYE 100AH 51.2v (5.12KWH)", "quantity": 1, "total_kwh": 5.12},
+                "battery_specs": {
+                    "capacity": "100Ah / 5.12kWh",
+                    "voltage": "51.2V",
+                    "type": "LiFePO4",
+                    "cycle_life": "6000+ cycles",
+                    "dod": "90%",
+                    "dimensions": "483×420×177mm"
+                },
+                "description": "Perfect for small homes and offices (Daily consumption: 15-20 kWh)",
+                "daily_generation": "22-27.5 kWh",
+                "backup_time": "8-12 hours",
+                "recommended_load": "15-20 kWh/day",
+                "icon": "🏠",
+                "image_url": "https://www.deyeinverter.com/upload/image/20210901/5kw-hybrid-inverter.jpg"
+            },
+            {
+                "name": "8kW Hybrid Solar System",
+                "inverter": "Deye Hybrid 8kw EU 1P",
+                "inverter_power": 8.0,
+                "inverter_specs": {
+                    "max_pv_input": "10.4kW",
+                    "mppt_trackers": "2",
+                    "max_charge_current": "190A",
+                    "battery_voltage": "48V",
+                    "efficiency": "97.6%",
+                    "phases": "Single Phase"
+                },
+                "solar_panels": {"name": "Lvtopsun 550W", "quantity": 16, "total_kw": 8.8},
+                "panel_specs": {
+                    "power": "550W",
+                    "efficiency": "21.2%",
+                    "voltage_vmp": "41.8V",
+                    "current_imp": "13.16A",
+                    "dimensions": "2278×1134×35mm",
+                    "weight": "27.5kg"
+                },
+                "battery": {"name": "DEYE 100AH 51.2v (5.12KWH)", "quantity": 1, "total_kwh": 5.12},
+                "battery_specs": {
+                    "capacity": "100Ah / 5.12kWh",
+                    "voltage": "51.2V",
+                    "type": "LiFePO4",
+                    "cycle_life": "6000+ cycles",
+                    "dod": "90%",
+                    "dimensions": "483×420×177mm"
+                },
+                "description": "Ideal for medium-sized homes (Daily consumption: 25-32 kWh)",
+                "daily_generation": "35-44 kWh",
+                "backup_time": "10-14 hours",
+                "recommended_load": "25-32 kWh/day",
+                "icon": "🏡",
+                "image_url": "https://www.deyeinverter.com/upload/image/20210901/8kw-hybrid-inverter.jpg"
+            },
+            {
+                "name": "10kW Hybrid Solar System",
+                "inverter": "Deye 10kw eu 1P Low Voltage",
+                "inverter_power": 10.0,
+                "inverter_specs": {
+                    "max_pv_input": "13kW",
+                    "mppt_trackers": "2",
+                    "max_charge_current": "210A",
+                    "battery_voltage": "48V",
+                    "efficiency": "97.6%",
+                    "phases": "Single Phase"
+                },
+                "solar_panels": {"name": "Lvtopsun 550W", "quantity": 20, "total_kw": 11.0},
+                "panel_specs": {
+                    "power": "550W",
+                    "efficiency": "21.2%",
+                    "voltage_vmp": "41.8V",
+                    "current_imp": "13.16A",
+                    "dimensions": "2278×1134×35mm",
+                    "weight": "27.5kg"
+                },
+                "battery": {"name": "DEYE 100AH 51.2v (5.12KWH)", "quantity": 1, "total_kwh": 5.12},
+                "battery_specs": {
+                    "capacity": "100Ah / 5.12kWh",
+                    "voltage": "51.2V",
+                    "type": "LiFePO4",
+                    "cycle_life": "6000+ cycles",
+                    "dod": "90%",
+                    "dimensions": "483×420×177mm"
+                },
+                "description": "Great for large homes and small businesses (Daily consumption: 30-40 kWh)",
+                "daily_generation": "44-55 kWh",
+                "backup_time": "12-16 hours",
+                "recommended_load": "30-40 kWh/day",
+                "icon": "🏢",
+                "image_url": "https://www.deyeinverter.com/upload/image/20210901/10kw-hybrid-inverter.jpg"
+            },
+            {
+                "name": "20kW Commercial Solar System",
+                "inverter": "Deye 20kw eu 3P Low Voltage",
+                "inverter_power": 20.0,
+                "inverter_specs": {
+                    "max_pv_input": "26kW",
+                    "mppt_trackers": "2",
+                    "max_charge_current": "210A",
+                    "battery_voltage": "48V",
+                    "efficiency": "97.8%",
+                    "phases": "Three Phase"
+                },
+                "solar_panels": {"name": "Lvtopsun 550W", "quantity": 40, "total_kw": 22.0},
+                "panel_specs": {
+                    "power": "550W",
+                    "efficiency": "21.2%",
+                    "voltage_vmp": "41.8V",
+                    "current_imp": "13.16A",
+                    "dimensions": "2278×1134×35mm",
+                    "weight": "27.5kg"
+                },
+                "battery": {"name": "DEYE 100AH 51.2v (5.12KWH)", "quantity": 1, "total_kwh": 5.12},
+                "battery_specs": {
+                    "capacity": "100Ah / 5.12kWh",
+                    "voltage": "51.2V",
+                    "type": "LiFePO4",
+                    "cycle_life": "6000+ cycles",
+                    "dod": "90%",
+                    "dimensions": "483×420×177mm"
+                },
+                "description": "Perfect for commercial buildings (Daily consumption: 60-80 kWh)",
+                "daily_generation": "88-110 kWh",
+                "backup_time": "10-14 hours",
+                "recommended_load": "60-80 kWh/day",
+                "icon": "🏭",
+                "image_url": "https://www.deyeinverter.com/upload/image/20210901/20kw-hybrid-inverter.jpg"
+            },
+            {
+                "name": "30kW Industrial Solar System",
+                "inverter": "Deye 30kw eu 3p",
+                "inverter_power": 30.0,
+                "inverter_specs": {
+                    "max_pv_input": "39kW",
+                    "mppt_trackers": "2",
+                    "max_charge_current": "210A",
+                    "battery_voltage": "48V",
+                    "efficiency": "97.8%",
+                    "phases": "Three Phase"
+                },
+                "solar_panels": {"name": "Lvtopsun 550W", "quantity": 60, "total_kw": 33.0},
+                "panel_specs": {
+                    "power": "550W",
+                    "efficiency": "21.2%",
+                    "voltage_vmp": "41.8V",
+                    "current_imp": "13.16A",
+                    "dimensions": "2278×1134×35mm",
+                    "weight": "27.5kg"
+                },
+                "battery": {"name": "DEYE 100AH 51.2v (5.12KWH)", "quantity": 1, "total_kwh": 5.12},
+                "battery_specs": {
+                    "capacity": "100Ah / 5.12kWh",
+                    "voltage": "51.2V",
+                    "type": "LiFePO4",
+                    "cycle_life": "6000+ cycles",
+                    "dod": "90%",
+                    "dimensions": "483×420×177mm"
+                },
+                "description": "Industrial-grade power solution (Daily consumption: 90-120 kWh)",
+                "daily_generation": "132-165 kWh",
+                "backup_time": "12-16 hours",
+                "recommended_load": "90-120 kWh/day",
+                "icon": "🏗️",
+                "image_url": "https://www.deyeinverter.com/upload/image/20210901/30kw-hybrid-inverter.jpg"
+            }
+        ]
+        
+        # Display each system set
+        for sys_set in system_sets:
+            with st.expander(f"{sys_set['icon']} {sys_set['name']} - {sys_set['inverter_power']}kW"):
+                # Display system image
+                img_col1, img_col2, img_col3 = st.columns([1, 2, 1])
+                with img_col2:
+                    inverter_img = product_images.get(sys_set['inverter'], "https://m.media-amazon.com/images/I/61VH9YqVZlL._AC_SL1500_.jpg")
+                    st.image(inverter_img, caption=f"{sys_set['inverter']} - Main System Component", width=400)
+                
+                st.markdown(f"**{sys_set['description']}**")
+                st.markdown("---")
+                
+                # Performance Summary Card
+                st.markdown(f"""
+                <div style='background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%); 
+                            padding: 1.2rem; border-radius: 10px; border-left: 4px solid #10b981; margin-bottom: 1rem;'>
+                    <h3 style='margin: 0 0 0.8rem 0; color: #065f46;'>📊 System Performance</h3>
+                    <div style='display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem;'>
+                        <div style='text-align: center;'>
+                            <p style='margin: 0; font-size: 0.85rem; color: #065f46;'><b>Daily Generation</b></p>
+                            <p style='margin: 0.2rem 0; font-size: 1.3rem; color: #047857; font-weight: 700;'>{sys_set['daily_generation']}</p>
+                        </div>
+                        <div style='text-align: center; border-left: 2px solid #10b981; border-right: 2px solid #10b981;'>
+                            <p style='margin: 0; font-size: 0.85rem; color: #065f46;'><b>Backup Time</b></p>
+                            <p style='margin: 0.2rem 0; font-size: 1.3rem; color: #047857; font-weight: 700;'>{sys_set['backup_time']}</p>
+                        </div>
+                        <div style='text-align: center;'>
+                            <p style='margin: 0; font-size: 0.85rem; color: #065f46;'><b>Recommended Load</b></p>
+                            <p style='margin: 0.2rem 0; font-size: 1.3rem; color: #047857; font-weight: 700;'>{sys_set['recommended_load']}</p>
+                        </div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                # Detailed Component Specifications
+                st.markdown("### 🔧 Component Specifications")
+                
+                spec_col1, spec_col2, spec_col3 = st.columns(3)
+                
+                with spec_col1:
+                    st.markdown(f"""
+                    <div style='background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); 
+                                padding: 1rem; border-radius: 8px; border-left: 4px solid #f59e0b;'>
+                        <h4 style='margin: 0 0 0.8rem 0; color: #92400e;'>☀️ Solar Panels</h4>
+                        <p style='margin: 0.3rem 0; font-size: 0.85rem;'><b>Model:</b> {sys_set['solar_panels']['name']}</p>
+                        <p style='margin: 0.3rem 0; font-size: 0.85rem;'><b>Quantity:</b> {sys_set['solar_panels']['quantity']} panels</p>
+                        <p style='margin: 0.3rem 0; font-size: 0.85rem;'><b>Total Power:</b> {sys_set['solar_panels']['total_kw']} kW</p>
+                        <hr style='margin: 0.5rem 0; border: 1px solid #f59e0b;'>
+                        <p style='margin: 0.3rem 0; font-size: 0.8rem;'><b>Power/Panel:</b> {sys_set['panel_specs']['power']}</p>
+                        <p style='margin: 0.3rem 0; font-size: 0.8rem;'><b>Efficiency:</b> {sys_set['panel_specs']['efficiency']}</p>
+                        <p style='margin: 0.3rem 0; font-size: 0.8rem;'><b>Vmp:</b> {sys_set['panel_specs']['voltage_vmp']}</p>
+                        <p style='margin: 0.3rem 0; font-size: 0.8rem;'><b>Imp:</b> {sys_set['panel_specs']['current_imp']}</p>
+                        <p style='margin: 0.3rem 0; font-size: 0.8rem;'><b>Size:</b> {sys_set['panel_specs']['dimensions']}</p>
+                        <p style='margin: 0.3rem 0; font-size: 0.8rem;'><b>Weight:</b> {sys_set['panel_specs']['weight']}</p>
+                        <p style='margin: 0.3rem 0; font-size: 0.8rem;'><b>Area Needed:</b> ~{sys_set['solar_panels']['quantity'] * 2.6:.1f} m²</p>
+                    </div>
+                    """, unsafe_allow_html=True)
+                
+                with spec_col2:
+                    st.markdown(f"""
+                    <div style='background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%); 
+                                padding: 1rem; border-radius: 8px; border-left: 4px solid #6366f1;'>
+                        <h4 style='margin: 0 0 0.8rem 0; color: #4338ca;'>⚡ Inverter</h4>
+                        <p style='margin: 0.3rem 0; font-size: 0.85rem;'><b>Model:</b> {sys_set['inverter']}</p>
+                        <p style='margin: 0.3rem 0; font-size: 0.85rem;'><b>Power:</b> {sys_set['inverter_power']} kW</p>
+                        <p style='margin: 0.3rem 0; font-size: 0.85rem;'><b>Type:</b> Hybrid (Grid-Tied + Off-Grid)</p>
+                        <hr style='margin: 0.5rem 0; border: 1px solid #6366f1;'>
+                        <p style='margin: 0.3rem 0; font-size: 0.8rem;'><b>Max PV Input:</b> {sys_set['inverter_specs']['max_pv_input']}</p>
+                        <p style='margin: 0.3rem 0; font-size: 0.8rem;'><b>MPPT Trackers:</b> {sys_set['inverter_specs']['mppt_trackers']}</p>
+                        <p style='margin: 0.3rem 0; font-size: 0.8rem;'><b>Max Charge:</b> {sys_set['inverter_specs']['max_charge_current']}</p>
+                        <p style='margin: 0.3rem 0; font-size: 0.8rem;'><b>Battery Voltage:</b> {sys_set['inverter_specs']['battery_voltage']}</p>
+                        <p style='margin: 0.3rem 0; font-size: 0.8rem;'><b>Efficiency:</b> {sys_set['inverter_specs']['efficiency']}</p>
+                        <p style='margin: 0.3rem 0; font-size: 0.8rem;'><b>Phases:</b> {sys_set['inverter_specs']['phases']}</p>
+                    </div>
+                    """, unsafe_allow_html=True)
+                
+                with spec_col3:
+                    st.markdown(f"""
+                    <div style='background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); 
+                                padding: 1rem; border-radius: 8px; border-left: 4px solid #3b82f6;'>
+                        <h4 style='margin: 0 0 0.8rem 0; color: #1e40af;'>🔋 Battery Storage</h4>
+                        <p style='margin: 0.3rem 0; font-size: 0.85rem;'><b>Model:</b> {sys_set['battery']['name']}</p>
+                        <p style='margin: 0.3rem 0; font-size: 0.85rem;'><b>Quantity:</b> {sys_set['battery']['quantity']} units</p>
+                        <p style='margin: 0.3rem 0; font-size: 0.85rem;'><b>Total:</b> {sys_set['battery']['total_kwh']:.2f} kWh</p>
+                        <hr style='margin: 0.5rem 0; border: 1px solid #3b82f6;'>
+                        <p style='margin: 0.3rem 0; font-size: 0.8rem;'><b>Capacity/Unit:</b> {sys_set['battery_specs']['capacity']}</p>
+                        <p style='margin: 0.3rem 0; font-size: 0.8rem;'><b>Voltage:</b> {sys_set['battery_specs']['voltage']}</p>
+                        <p style='margin: 0.3rem 0; font-size: 0.8rem;'><b>Type:</b> {sys_set['battery_specs']['type']}</p>
+                        <p style='margin: 0.3rem 0; font-size: 0.8rem;'><b>Cycle Life:</b> {sys_set['battery_specs']['cycle_life']}</p>
+                        <p style='margin: 0.3rem 0; font-size: 0.8rem;'><b>DoD:</b> {sys_set['battery_specs']['dod']}</p>
+                        <p style='margin: 0.3rem 0; font-size: 0.8rem;'><b>Size:</b> {sys_set['battery_specs']['dimensions']}</p>
+                        <p style='margin: 0.3rem 0; font-size: 0.8rem;'><b>Usable Energy:</b> {sys_set['battery']['total_kwh'] * 0.9:.2f} kWh</p>
+                    </div>
+                    """, unsafe_allow_html=True)
+                
+                st.markdown("<br>", unsafe_allow_html=True)
+                
+                # Calculate pricing
+                # Get product prices - search by exact name match
+                inverter_price = 0
+                for prod_name, prod in pm.products.items():
+                    if prod_name == sys_set['inverter']:
+                        inverter_price = prod.cost
+                        break
+                
+                # Fallback prices based on inverter model
+                if inverter_price == 0:
+                    inverter_prices = {
+                        "Deye Hybrid 5kw EU 1P": 888.00,
+                        "Deye Hybrid 8kw EU 1P": 1320.00,
+                        "Deye 10kw eu 1P Low Voltage": 1800.00,
+                        "Deye 20kw eu 3P Low Voltage": 3096.00,
+                        "Deye 30kw eu 3p": 4080.00
+                    }
+                    inverter_price = inverter_prices.get(sys_set['inverter'], 888.00)
+                
+                panel_product = pm.products.get(sys_set['solar_panels']['name'])
+                panel_price = panel_product.cost if panel_product else 66
+                
+                battery_product = pm.products.get(sys_set['battery']['name'])
+                battery_price = battery_product.cost if battery_product else 1440
+                
+                # Improved calculation for materials and labor based on system size
+                panel_qty = sys_set['solar_panels']['quantity']
+                
+                # Calculate mounting materials (more accurate) + 20% markup
+                rails_needed = panel_qty * 0.5  # 2 panels per 4.8m rail
+                base_materials_cost = (
+                    (rails_needed * 19.20) +  # Rails
+                    (panel_qty * 2 * 0.60) +  # Mid clamps (2 per panel)
+                    (panel_qty * 0.60) +  # End clamps
+                    ((rails_needed - 1) * 0.84) +  # Rail connectors
+                    (panel_qty * 4 * 1.32) +  # L feet (4 per panel)
+                    (panel_qty * 6 * 64.80 / 100)  # PV cables (6m per panel average)
+                )
+                materials_cost = base_materials_cost * 1.20  # Add 20% markup
+                
+                # Labor cost calculation based on system complexity + 20% markup
+                # Base: $80/kW + complexity factor
+                base_labor = sys_set['inverter_power'] * 80
+                complexity_factor = 1.0 + (0.05 * (panel_qty // 10))  # 5% more per 10 panels
+                labor_cost = (base_labor * complexity_factor) * 1.20  # Add 20% markup
+                
+                equipment_total = (inverter_price + 
+                                 (panel_price * panel_qty) + 
+                                 (battery_price * sys_set['battery']['quantity']))
+                
+                wholesale_total = equipment_total + materials_cost + labor_cost
+                retail_total = wholesale_total * (1 + st.session_state.price_markup / 100)
+                
+                # Pricing breakdown
+                if st.session_state.hide_wholesale:
+                    st.markdown("### 💰 System Pricing")
+                else:
+                    st.markdown("### 💰 Complete System Pricing")
+                
+                price_col1, price_col2 = st.columns(2)
+                
+                with price_col1:
+                    # Only show breakdown if wholesale is visible
+                    if not st.session_state.hide_wholesale:
+                        # Calculate individual material costs for display (with 20% markup)
+                        rails_cost = (rails_needed * 19.20) * 1.20
+                        clamps_cost = ((panel_qty * 2 * 0.60) + (panel_qty * 0.60)) * 1.20
+                        connectors_cost = ((rails_needed - 1) * 0.84) * 1.20
+                        lfeet_cost = (panel_qty * 4 * 1.32) * 1.20
+                        cables_cost = (panel_qty * 6 * 64.80 / 100) * 1.20
+                        
+                        st.markdown("#### 📊 Detailed Cost Breakdown")
+                        
+                        # Main Equipment
+                        st.markdown("**Main Equipment**")
+                        st.write(f"⚡ Inverter (1x): ${inverter_price:,.2f}")
+                        st.write(f"☀️ Solar Panels ({panel_qty}x): ${panel_price * panel_qty:,.2f}")
+                        st.write(f"🔋 Battery ({sys_set['battery']['quantity']}x): ${battery_price * sys_set['battery']['quantity']:,.2f}")
+                        st.markdown(f"**Equipment Subtotal: ${equipment_total:,.2f}**")
+                        
+                        st.markdown("---")
+                        
+                        # Mounting & Materials (with 20% markup)
+                        st.markdown("**Mounting & Materials (+20%)**")
+                        st.write(f"Rails ({rails_needed:.0f}x 4.8m): ${rails_cost:,.2f}")
+                        st.write(f"Clamps (Mid + End): ${clamps_cost:,.2f}")
+                        st.write(f"Connectors & L-Feet: ${connectors_cost + lfeet_cost:,.2f}")
+                        st.write(f"PV Cables (~{panel_qty * 6}m): ${cables_cost:,.2f}")
+                        st.markdown(f"**Materials Subtotal: ${materials_cost:,.2f}**")
+                        
+                        st.markdown("---")
+                        
+                        # Installation (with 20% markup)
+                        st.markdown("**Installation (+20%)**")
+                        base_labor_raw = base_labor / 1.20
+                        st.write(f"👷 Base Labor ({sys_set['inverter_power']}kW × $80): ${base_labor_raw:,.2f}")
+                        st.write(f"Complexity (+{(complexity_factor-1)*100:.0f}%): ${base_labor_raw * (complexity_factor - 1):,.2f}")
+                        st.write(f"Markup (+20%): ${(base_labor * complexity_factor) * 0.20:,.2f}")
+                        st.markdown(f"**Labor Subtotal: ${labor_cost:,.2f}**")
+                    else:
+                        # Show simplified info when wholesale is hidden
+                        st.markdown("#### 📦 System Includes")
+                        st.write(f"⚡ {sys_set['inverter']} Inverter")
+                        st.write(f"☀️ {panel_qty}x {sys_set['solar_panels']['name']}")
+                        st.write(f"🔋 {sys_set['battery']['quantity']}x {sys_set['battery']['name']}")
+                        st.write(f"🔧 Complete mounting & materials")
+                        st.write(f"👷 Professional installation")
+                        st.write(f"📐 Area needed: ~{panel_qty * 2.6:.1f} m²")
+                
+                with price_col2:
+                    # Apply pricing control settings
+                    if st.session_state.hide_wholesale:
+                        # Show only retail price
+                        st.markdown(f"""
+                        <div style='background: linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%); 
+                                    padding: 1.2rem; border-radius: 10px; border-left: 4px solid #ec4899; text-align: center;'>
+                            <h4 style='margin: 0 0 0.8rem 0; color: #9f1239;'>💵 System Price</h4>
+                            <p style='margin: 0; font-size: 2.2rem; color: #be185d; font-weight: 700;'>${retail_total:,.2f}</p>
+                            <p style='margin: 0.5rem 0 0 0; font-size: 0.85rem; color: #9f1239;'>
+                                <b>Price per kW:</b> ${retail_total / sys_set['inverter_power']:,.2f}/kW
+                            </p>
+                        </div>
+                        """, unsafe_allow_html=True)
+                    else:
+                        # Show both wholesale and retail
+                        st.markdown(f"""
+                        <div style='background: linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%); 
+                                    padding: 1.2rem; border-radius: 10px; border-left: 4px solid #ec4899;'>
+                            <h4 style='margin: 0 0 0.8rem 0; color: #9f1239;'>💵 Final Pricing</h4>
+                            <div style='margin: 1rem 0;'>
+                                <p style='margin: 0.3rem 0; font-size: 0.95rem;'><b>💼 Wholesale Price:</b></p>
+                                <p style='margin: 0; font-size: 1.5rem; color: #9f1239; font-weight: 600;'>${wholesale_total:,.2f}</p>
+                            </div>
+                            <hr style='margin: 1rem 0; border: 2px solid #ec4899;'>
+                            <div style='margin: 1rem 0;'>
+                                <p style='margin: 0.3rem 0; font-size: 0.95rem;'><b>🏷️ Retail Price (+{st.session_state.price_markup:.0f}%):</b></p>
+                                <p style='margin: 0; font-size: 1.8rem; color: #be185d; font-weight: 700;'>${retail_total:,.2f}</p>
+                            </div>
+                            <p style='margin: 0.5rem 0 0 0; font-size: 0.8rem; color: #9f1239;'>
+                                <b>Price per kW:</b> ${retail_total / sys_set['inverter_power']:,.2f}/kW
+                            </p>
+                        </div>
+                        """, unsafe_allow_html=True)
+                
+                # Installation notes
+                st.markdown("---")
+                st.info(f"""
+                **📋 What's Included:**
+                • {sys_set['solar_panels']['quantity']}x {sys_set['solar_panels']['name']} solar panels
+                • 1x {sys_set['inverter']} hybrid inverter
+                • {sys_set['battery']['quantity']}x {sys_set['battery']['name']} battery units
+                • Complete mounting system (rails, clamps, connectors)
+                • PV cables and electrical accessories
+                • Professional installation and commissioning
+                • System testing and warranty activation
+                """)
+        
+        st.markdown("---")
+        st.success("✅ **All system sets include:** Complete equipment, materials, installation labor, and 1-year service warranty")
+    
+    # ========== TAB 3: WATER PUMP SETS ==========
+    with main_tab3:
+        st.markdown("### 💧 Solar Water Pump System Sets")
+        st.markdown("Complete solar-powered water pumping systems with panels, controller, and installation")
+        
+        # Water pump system configurations - ALL MODELS
+        pump_sets = [
+            {
+                "name": "600W Solar Water Pump System (3DPC)",
+                "hp": 0.8,
+                "pump_model": "3DPC5.2-50-48-600W",
+                "pump_power": 600,
+                "pump_specs": {
+                    "power": "600W (0.8 HP)",
+                    "voltage": "48V DC",
+                    "max_flow": "5.2 m³/h",
+                    "max_head": "50m",
+                    "outlet": "1.5 inch"
+                },
+                "solar_panels": {"name": "Lvtopsun 340W", "quantity": 2, "total_kw": 0.68},
+                "controller": "MPPT Solar Pump Controller 48V",
+                "description": "Perfect for small farms and home gardens",
+                "applications": "Irrigation, livestock watering, domestic use",
+                "daily_water": "20-30 m³/day",
+                "icon": "🏡"
+            },
+            {
+                "name": "750W Solar Water Pump System (4DPC)",
+                "hp": 1,
+                "pump_model": "4DPC9-45-110-750W",
+                "pump_power": 750,
+                "pump_specs": {
+                    "power": "750W (1 HP)",
+                    "voltage": "110V DC",
+                    "max_flow": "9 m³/h",
+                    "max_head": "45m",
+                    "outlet": "2 inch"
+                },
+                "solar_panels": {"name": "Lvtopsun 340W", "quantity": 3, "total_kw": 1.02},
+                "controller": "MPPT Solar Pump Controller 110V",
+                "description": "Ideal for small to medium farms",
+                "applications": "Farm irrigation, garden watering",
+                "daily_water": "35-45 m³/day",
+                "icon": "🌱"
+            },
+            {
+                "name": "750W Solar Water Pump System (DCPM)",
+                "hp": 1,
+                "pump_model": "DCPM21-14-72-750W",
+                "pump_power": 750,
+                "pump_specs": {
+                    "power": "750W (1 HP)",
+                    "voltage": "72V DC",
+                    "max_flow": "21 m³/h",
+                    "max_head": "14m",
+                    "outlet": "2 inch"
+                },
+                "solar_panels": {"name": "Lvtopsun 340W", "quantity": 3, "total_kw": 1.02},
+                "controller": "MPPT Solar Pump Controller 72V",
+                "description": "High flow for shallow wells",
+                "applications": "Surface water pumping, pond filling",
+                "daily_water": "80-100 m³/day",
+                "icon": "💦"
+            },
+            {
+                "name": "1100W Solar Water Pump System (3DPC)",
+                "hp": 1.5,
+                "pump_model": "3DPC6-84-110-1100W",
+                "pump_power": 1100,
+                "pump_specs": {
+                    "power": "1100W (1.5 HP)",
+                    "voltage": "110V DC",
+                    "max_flow": "6 m³/h",
+                    "max_head": "84m",
+                    "outlet": "1.5 inch"
+                },
+                "solar_panels": {"name": "Lvtopsun 550W", "quantity": 2, "total_kw": 1.1},
+                "controller": "MPPT Solar Pump Controller 110V",
+                "description": "Deep well specialist",
+                "applications": "Deep well pumping, high head applications",
+                "daily_water": "25-35 m³/day",
+                "icon": "⛏️"
+            },
+            {
+                "name": "1500W Solar Water Pump System (4DPC)",
+                "hp": 2,
+                "pump_model": "4DPC9-85-110-1500W",
+                "pump_power": 1500,
+                "pump_specs": {
+                    "power": "1500W (2 HP)",
+                    "voltage": "110V DC",
+                    "max_flow": "9 m³/h",
+                    "max_head": "85m",
+                    "outlet": "2 inch"
+                },
+                "solar_panels": {"name": "Lvtopsun 550W", "quantity": 3, "total_kw": 1.65},
+                "controller": "MPPT Solar Pump Controller 110V",
+                "description": "Ideal for medium farms and irrigation",
+                "applications": "Farm irrigation, fish ponds, water supply",
+                "daily_water": "40-60 m³/day",
+                "icon": "🌾"
+            },
+            {
+                "name": "1500W Solar Water Pump System (DCPM)",
+                "hp": 2,
+                "pump_model": "DCPM50-17-110-1500W",
+                "pump_power": 1500,
+                "pump_specs": {
+                    "power": "1500W (2 HP)",
+                    "voltage": "110V DC",
+                    "max_flow": "50 m³/h",
+                    "max_head": "17m",
+                    "outlet": "3 inch"
+                },
+                "solar_panels": {"name": "Lvtopsun 550W", "quantity": 3, "total_kw": 1.65},
+                "controller": "MPPT Solar Pump Controller 110V",
+                "description": "High volume for surface water",
+                "applications": "Large pond filling, surface irrigation",
+                "daily_water": "200-250 m³/day",
+                "icon": "🌊"
+            },
+            {
+                "name": "2200W Solar Water Pump System (4DSC)",
+                "hp": 3,
+                "pump_model": "4DSC19-60-300-2200W",
+                "pump_power": 2200,
+                "pump_specs": {
+                    "power": "2200W (3 HP)",
+                    "voltage": "300V DC",
+                    "max_flow": "19 m³/h",
+                    "max_head": "60m",
+                    "outlet": "3 inch"
+                },
+                "solar_panels": {"name": "Lvtopsun 550W", "quantity": 5, "total_kw": 2.75},
+                "controller": "MPPT Solar Pump Controller 300V",
+                "description": "Great for large farms and commercial use",
+                "applications": "Large-scale irrigation, water distribution",
+                "daily_water": "80-100 m³/day",
+                "icon": "🚜"
+            },
+            {
+                "name": "2200W Solar Water Pump System (DCPM)",
+                "hp": 3,
+                "pump_model": "DCPM60-20-300-2200W-A/D",
+                "pump_power": 2200,
+                "pump_specs": {
+                    "power": "2200W (3 HP)",
+                    "voltage": "300V DC",
+                    "max_flow": "60 m³/h",
+                    "max_head": "20m",
+                    "outlet": "4 inch"
+                },
+                "solar_panels": {"name": "Lvtopsun 550W", "quantity": 5, "total_kw": 2.75},
+                "controller": "MPPT Solar Pump Controller 300V",
+                "description": "Ultra high flow for surface applications",
+                "applications": "Flood irrigation, large pond systems",
+                "daily_water": "250-300 m³/day",
+                "icon": "🌊"
+            },
+            {
+                "name": "4 HP Solar Water Pump System",
+                "hp": 4,
+                "pump_model": "4DSC19-98-380/550-3000W",
+                "pump_power": 3000,
+                "pump_specs": {
+                    "power": "3000W (4 HP)",
+                    "voltage": "380V AC / 550V DC",
+                    "max_flow": "19 m³/h",
+                    "max_head": "98m",
+                    "outlet": "3 inch"
+                },
+                "solar_panels": {"name": "Lvtopsun 550W", "quantity": 6, "total_kw": 3.3},
+                "controller": "MPPT Solar Pump Controller 380V",
+                "description": "Heavy-duty for deep wells and high head",
+                "applications": "Deep well pumping, high-pressure irrigation",
+                "daily_water": "100-120 m³/day",
+                "icon": "🏭"
+            },
+            {
+                "name": "5 HP Solar Water Pump System",
+                "hp": 5,
+                "pump_model": "4DSC19-135-380/550-4000W",
+                "pump_power": 4000,
+                "pump_specs": {
+                    "power": "4000W (5 HP)",
+                    "voltage": "380V AC / 550V DC",
+                    "max_flow": "19 m³/h",
+                    "max_head": "135m",
+                    "outlet": "3 inch"
+                },
+                "solar_panels": {"name": "Lvtopsun 550W", "quantity": 8, "total_kw": 4.4},
+                "controller": "MPPT Solar Pump Controller 380V",
+                "description": "Industrial-grade for maximum performance",
+                "applications": "Industrial water supply, large irrigation systems",
+                "daily_water": "120-150 m³/day",
+                "icon": "🏗️"
+            }
+        ]
+        
+        # Display each pump set
+        for pump_set in pump_sets:
+            with st.expander(f"{pump_set['icon']} {pump_set['name']} - {pump_set['hp']} HP"):
+                # Display pump image using HTML
+                img_col1, img_col2, img_col3 = st.columns([1, 2, 1])
+                with img_col2:
+                    pump_img = product_images.get(pump_set['pump_model'], "https://via.placeholder.com/400x300.png?text=Water+Pump")
+                    st.markdown(f"""
+                    <div style='text-align: center;'>
+                        <img src='{pump_img}' style='max-width: 400px; width: 100%; height: auto; border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);' onerror="this.src='https://via.placeholder.com/400x300.png?text=Water+Pump'">
+                        <p style='margin-top: 0.5rem; color: #666; font-size: 0.9rem;'>{pump_set['pump_model']}</p>
+                    </div>
+                    """, unsafe_allow_html=True)
+                
+                st.markdown(f"**{pump_set['description']}**")
+                st.markdown(f"**Applications:** {pump_set['applications']}")
+                st.markdown("---")
+                
+                # Performance Summary
+                st.markdown(f"""
+                <div style='background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); 
+                            padding: 1.2rem; border-radius: 10px; border-left: 4px solid #3b82f6; margin-bottom: 1rem;'>
+                    <h3 style='margin: 0 0 0.8rem 0; color: #1e40af;'>💧 System Performance</h3>
+                    <div style='display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem;'>
+                        <div style='text-align: center;'>
+                            <p style='margin: 0; font-size: 0.85rem; color: #1e40af;'><b>Pump Power</b></p>
+                            <p style='margin: 0.2rem 0; font-size: 1.3rem; color: #1e3a8a; font-weight: 700;'>{pump_set['pump_power']}W ({pump_set['hp']} HP)</p>
+                        </div>
+                        <div style='text-align: center; border-left: 2px solid #3b82f6; border-right: 2px solid #3b82f6;'>
+                            <p style='margin: 0; font-size: 0.85rem; color: #1e40af;'><b>Daily Water Output</b></p>
+                            <p style='margin: 0.2rem 0; font-size: 1.3rem; color: #1e3a8a; font-weight: 700;'>{pump_set['daily_water']}</p>
+                        </div>
+                        <div style='text-align: center;'>
+                            <p style='margin: 0; font-size: 0.85rem; color: #1e40af;'><b>Solar Panels</b></p>
+                            <p style='margin: 0.2rem 0; font-size: 1.3rem; color: #1e3a8a; font-weight: 700;'>{pump_set['solar_panels']['quantity']}x {pump_set['solar_panels']['total_kw']}kW</p>
+                        </div>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                # Component Specifications
+                st.markdown("### 🔧 System Components")
+                
+                spec_col1, spec_col2 = st.columns(2)
+                
+                with spec_col1:
+                    st.markdown(f"""
+                    <div style='background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); 
+                                padding: 1rem; border-radius: 8px; border-left: 4px solid #f59e0b;'>
+                        <h4 style='margin: 0 0 0.8rem 0; color: #92400e;'>☀️ Solar Panels</h4>
+                        <p style='margin: 0.3rem 0; font-size: 0.85rem;'><b>Model:</b> {pump_set['solar_panels']['name']}</p>
+                        <p style='margin: 0.3rem 0; font-size: 0.85rem;'><b>Quantity:</b> {pump_set['solar_panels']['quantity']} panels</p>
+                        <p style='margin: 0.3rem 0; font-size: 0.85rem;'><b>Total Power:</b> {pump_set['solar_panels']['total_kw']} kW</p>
+                        <p style='margin: 0.3rem 0; font-size: 0.85rem;'><b>Area Needed:</b> ~{pump_set['solar_panels']['quantity'] * 2.6:.1f} m²</p>
+                    </div>
+                    """, unsafe_allow_html=True)
+                    
+                    st.markdown("<br>", unsafe_allow_html=True)
+                    
+                    st.markdown(f"""
+                    <div style='background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%); 
+                                padding: 1rem; border-radius: 8px; border-left: 4px solid #6366f1;'>
+                        <h4 style='margin: 0 0 0.8rem 0; color: #4338ca;'>⚡ Controller</h4>
+                        <p style='margin: 0.3rem 0; font-size: 0.85rem;'><b>Type:</b> {pump_set['controller']}</p>
+                        <p style='margin: 0.3rem 0; font-size: 0.85rem;'><b>Features:</b> MPPT, Auto start/stop</p>
+                        <p style='margin: 0.3rem 0; font-size: 0.85rem;'><b>Protection:</b> Overload, dry-run, overvoltage</p>
+                    </div>
+                    """, unsafe_allow_html=True)
+                
+                with spec_col2:
+                    st.markdown(f"""
+                    <div style='background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); 
+                                padding: 1rem; border-radius: 8px; border-left: 4px solid #3b82f6;'>
+                        <h4 style='margin: 0 0 0.8rem 0; color: #1e40af;'>💧 Water Pump</h4>
+                        <p style='margin: 0.3rem 0; font-size: 0.85rem;'><b>Model:</b> {pump_set['pump_model']}</p>
+                        <p style='margin: 0.3rem 0; font-size: 0.85rem;'><b>Power:</b> {pump_set['pump_specs']['power']}</p>
+                        <p style='margin: 0.3rem 0; font-size: 0.85rem;'><b>Voltage:</b> {pump_set['pump_specs']['voltage']}</p>
+                        <p style='margin: 0.3rem 0; font-size: 0.85rem;'><b>Max Flow:</b> {pump_set['pump_specs']['max_flow']}</p>
+                        <p style='margin: 0.3rem 0; font-size: 0.85rem;'><b>Max Head:</b> {pump_set['pump_specs']['max_head']}</p>
+                        <p style='margin: 0.3rem 0; font-size: 0.85rem;'><b>Outlet:</b> {pump_set['pump_specs']['outlet']}</p>
+                    </div>
+                    """, unsafe_allow_html=True)
+                
+                st.markdown("<br>", unsafe_allow_html=True)
+                
+                # Pricing calculation
+                pump_price = pm.products.get(pump_set['pump_model'])
+                pump_cost = pump_price.cost if pump_price else 200.00
+                
+                panel_price = pm.products.get(pump_set['solar_panels']['name'])
+                panel_cost = panel_price.cost if panel_price else 66.00
+                
+                controller_cost = 150.00
+                installation_cost = pump_set['pump_power'] * 0.15
+                
+                equipment_total = pump_cost + (panel_cost * pump_set['solar_panels']['quantity']) + controller_cost
+                wholesale_total = equipment_total + installation_cost
+                retail_total = wholesale_total * (1 + st.session_state.price_markup / 100)
+                
+                # Pricing display
+                st.markdown("### 💰 System Pricing")
+                
+                price_col1, price_col2 = st.columns(2)
+                
+                with price_col1:
+                    if not st.session_state.hide_wholesale:
+                        st.markdown("#### 📊 Cost Breakdown")
+                        st.write(f"💧 Water Pump: ${pump_cost:,.2f}")
+                        st.write(f"☀️ Solar Panels ({pump_set['solar_panels']['quantity']}x): ${panel_cost * pump_set['solar_panels']['quantity']:,.2f}")
+                        st.write(f"⚡ Controller: ${controller_cost:,.2f}")
+                        st.write(f"👷 Installation: ${installation_cost:,.2f}")
+                        st.markdown(f"**Total: ${equipment_total + installation_cost:,.2f}**")
+                    else:
+                        st.markdown("#### 📦 System Includes")
+                        st.write(f"💧 {pump_set['pump_model']}")
+                        st.write(f"☀️ {pump_set['solar_panels']['quantity']}x {pump_set['solar_panels']['name']}")
+                        st.write(f"⚡ MPPT Controller")
+                        st.write(f"👷 Professional installation")
+                        st.write(f"📐 Area needed: ~{pump_set['solar_panels']['quantity'] * 2.6:.1f} m²")
+                
+                with price_col2:
+                    if st.session_state.hide_wholesale:
+                        st.markdown(f"""
+                        <div style='background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); 
+                                    padding: 1.5rem; border-radius: 10px; border-left: 4px solid #3b82f6; text-align: center;'>
+                            <h4 style='margin: 0 0 0.8rem 0; color: #1e40af;'>💵 System Price</h4>
+                            <p style='margin: 0; font-size: 2rem; color: #1e3a8a; font-weight: 700;'>${retail_total:,.2f}</p>
+                            <p style='margin: 0.5rem 0 0 0; font-size: 0.85rem; color: #1e40af;'>Complete installed system</p>
+                        </div>
+                        """, unsafe_allow_html=True)
+                    else:
+                        st.markdown(f"""
+                        <div style='background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%); 
+                                    padding: 1.5rem; border-radius: 10px; border-left: 4px solid #3b82f6;'>
+                            <h4 style='margin: 0 0 0.8rem 0; color: #1e40af; text-align: center;'>💵 Final Pricing</h4>
+                            <div style='margin: 0.5rem 0;'>
+                                <p style='margin: 0.3rem 0; font-size: 0.9rem;'><b>💼 Wholesale:</b></p>
+                                <p style='margin: 0; font-size: 1.3rem; color: #1e40af; font-weight: 600;'>${wholesale_total:,.2f}</p>
+                            </div>
+                            <hr style='margin: 0.8rem 0; border: 1px solid #3b82f6;'>
+                            <div style='margin: 0.5rem 0;'>
+                                <p style='margin: 0.3rem 0; font-size: 0.9rem;'><b>🏷️ Retail (+{st.session_state.price_markup:.0f}%):</b></p>
+                                <p style='margin: 0; font-size: 1.8rem; color: #1e3a8a; font-weight: 700;'>${retail_total:,.2f}</p>
+                            </div>
+                        </div>
+                        """, unsafe_allow_html=True)
+                
+                st.markdown("---")
+                st.success("✅ **Includes:** Water pump, solar panels, MPPT controller, mounting structure, cables, and installation")
+        
+        st.markdown("---")
+        st.info("💡 **Note:** All water pump systems are designed for optimal performance with 6-8 hours of peak sunlight. Actual water output may vary based on sunlight conditions and installation location.")
 
 # ==================== SIMULATION ====================
 elif page == t('nav_simulation'):
@@ -4339,6 +5539,456 @@ elif page == t('nav_reports'):
     viz = SolarVisualizer()
     summary_df = viz.create_monthly_summary_table(results)
     st.dataframe(summary_df, use_container_width=True)
+
+# ==================== TECHNICIAN CALCULATOR ====================
+elif page == t('nav_technician'):
+    st.title(t('tech_calc'))
+    st.markdown(f"<p style='font-size: 1.1rem; color: #666; margin-bottom: 1rem;'>{t('tech_subtitle')}</p>", unsafe_allow_html=True)
+    
+    # Quick Reference Cards
+    st.markdown("### 📋 Quick Reference")
+    ref_col1, ref_col2, ref_col3, ref_col4 = st.columns(4)
+    
+    with ref_col1:
+        st.markdown("""
+        <div style='background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 1rem; border-radius: 10px; color: white; text-align: center;'>
+            <div style='font-size: 0.8rem; opacity: 0.9;'>Common Voltages</div>
+            <div style='font-size: 1.2rem; font-weight: bold; margin: 0.5rem 0;'>12V / 24V / 48V</div>
+            <div style='font-size: 0.75rem; opacity: 0.8;'>DC Systems</div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with ref_col2:
+        st.markdown("""
+        <div style='background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 1rem; border-radius: 10px; color: white; text-align: center;'>
+            <div style='font-size: 0.8rem; opacity: 0.9;'>Max Voltage Drop</div>
+            <div style='font-size: 1.2rem; font-weight: bold; margin: 0.5rem 0;'>3% - 5%</div>
+            <div style='font-size: 0.75rem; opacity: 0.8;'>Acceptable Range</div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with ref_col3:
+        st.markdown("""
+        <div style='background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); padding: 1rem; border-radius: 10px; color: white; text-align: center;'>
+            <div style='font-size: 0.8rem; opacity: 0.9;'>Battery DoD</div>
+            <div style='font-size: 1.2rem; font-weight: bold; margin: 0.5rem 0;'>50% - 80%</div>
+            <div style='font-size: 0.75rem; opacity: 0.8;'>Recommended</div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    with ref_col4:
+        st.markdown("""
+        <div style='background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); padding: 1rem; border-radius: 10px; color: white; text-align: center;'>
+            <div style='font-size: 0.8rem; opacity: 0.9;'>Panel Voltage</div>
+            <div style='font-size: 1.2rem; font-weight: bold; margin: 0.5rem 0;'>18V - 36V</div>
+            <div style='font-size: 0.75rem; opacity: 0.8;'>Typical Vmp</div>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    st.markdown("<div style='margin: 1.5rem 0;'></div>", unsafe_allow_html=True)
+    
+    # Create tabs for different calculators
+    calc_tabs = st.tabs([
+        "☀️ Solar System",
+        "🔋 Battery & Runtime",
+        "📏 Wire Sizing",
+        "⚡ Quick Calculations",
+        "📊 Load Analysis"
+    ])
+    
+    # ===== TAB 1: SOLAR SYSTEM CALCULATOR =====
+    with calc_tabs[0]:
+        st.markdown("### ☀️ Solar System Calculator")
+        st.markdown("Calculate complete solar system specifications with presets.")
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown("#### 📥 Input")
+            calc_type = st.radio("What do you want to calculate?", 
+                               ["Voltage (V)", "Current (A)", "Resistance (Ω)", "Power (W)"])
+            
+            if calc_type == "Voltage (V)":
+                current = st.number_input("Current (A)", min_value=0.0, value=10.0, step=0.1)
+                resistance = st.number_input("Resistance (Ω)", min_value=0.0, value=12.0, step=0.1)
+                if st.button(t('calculate'), key="ohm_v"):
+                    voltage = current * resistance
+                    power = voltage * current
+                    st.session_state.ohm_result = {
+                        'voltage': voltage,
+                        'current': current,
+                        'resistance': resistance,
+                        'power': power
+                    }
+            
+            elif calc_type == "Current (A)":
+                voltage = st.number_input("Voltage (V)", min_value=0.0, value=12.0, step=0.1)
+                resistance = st.number_input("Resistance (Ω)", min_value=0.01, value=1.2, step=0.1)
+                if st.button(t('calculate'), key="ohm_i"):
+                    current = voltage / resistance
+                    power = voltage * current
+                    st.session_state.ohm_result = {
+                        'voltage': voltage,
+                        'current': current,
+                        'resistance': resistance,
+                        'power': power
+                    }
+            
+            elif calc_type == "Resistance (Ω)":
+                voltage = st.number_input("Voltage (V)", min_value=0.0, value=12.0, step=0.1)
+                current = st.number_input("Current (A)", min_value=0.01, value=10.0, step=0.1)
+                if st.button(t('calculate'), key="ohm_r"):
+                    resistance = voltage / current
+                    power = voltage * current
+                    st.session_state.ohm_result = {
+                        'voltage': voltage,
+                        'current': current,
+                        'resistance': resistance,
+                        'power': power
+                    }
+            
+            else:  # Power
+                voltage = st.number_input("Voltage (V)", min_value=0.0, value=12.0, step=0.1)
+                current = st.number_input("Current (A)", min_value=0.0, value=10.0, step=0.1)
+                if st.button(t('calculate'), key="ohm_p"):
+                    power = voltage * current
+                    resistance = voltage / current if current > 0 else 0
+                    st.session_state.ohm_result = {
+                        'voltage': voltage,
+                        'current': current,
+                        'resistance': resistance,
+                        'power': power
+                    }
+        
+        with col2:
+            st.markdown("#### 📊 Results")
+            if 'ohm_result' in st.session_state:
+                result = st.session_state.ohm_result
+                st.success(f"**Voltage:** {result['voltage']:.2f} V")
+                st.info(f"**Current:** {result['current']:.2f} A")
+                st.warning(f"**Resistance:** {result['resistance']:.2f} Ω")
+                st.error(f"**Power:** {result['power']:.2f} W ({result['power']/1000:.2f} kW)")
+                
+                st.markdown("---")
+                st.markdown("**📐 Formulas Used:**")
+                st.code("V = I × R\nI = V / R\nR = V / I\nP = V × I")
+    
+    # ===== TAB 2: POWER CALCULATOR =====
+    with calc_tabs[1]:
+        st.markdown("### 💡 Power Calculator")
+        st.markdown("Calculate power consumption and energy costs.")
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown("#### 📥 Device Information")
+            device_power = st.number_input("Device Power (W)", min_value=0.0, value=1000.0, step=10.0)
+            device_voltage = st.number_input("Operating Voltage (V)", min_value=0.0, value=220.0, step=1.0)
+            usage_hours = st.number_input("Daily Usage (hours)", min_value=0.0, value=8.0, step=0.5)
+            num_devices = st.number_input("Number of Devices", min_value=1, value=1, step=1)
+            electricity_rate = st.number_input("Electricity Rate ($/kWh)", min_value=0.0, value=0.20, step=0.01)
+            
+            if st.button(t('calculate'), key="power_calc"):
+                current_draw = device_power / device_voltage
+                daily_kwh = (device_power * usage_hours * num_devices) / 1000
+                monthly_kwh = daily_kwh * 30
+                yearly_kwh = daily_kwh * 365
+                daily_cost = daily_kwh * electricity_rate
+                monthly_cost = monthly_kwh * electricity_rate
+                yearly_cost = yearly_kwh * electricity_rate
+                
+                st.session_state.power_result = {
+                    'current': current_draw,
+                    'daily_kwh': daily_kwh,
+                    'monthly_kwh': monthly_kwh,
+                    'yearly_kwh': yearly_kwh,
+                    'daily_cost': daily_cost,
+                    'monthly_cost': monthly_cost,
+                    'yearly_cost': yearly_cost
+                }
+        
+        with col2:
+            st.markdown("#### 📊 Results")
+            if 'power_result' in st.session_state:
+                result = st.session_state.power_result
+                st.success(f"**Current Draw:** {result['current']:.2f} A")
+                st.markdown("---")
+                st.info(f"**Daily Energy:** {result['daily_kwh']:.2f} kWh (${result['daily_cost']:.2f})")
+                st.info(f"**Monthly Energy:** {result['monthly_kwh']:.2f} kWh (${result['monthly_cost']:.2f})")
+                st.info(f"**Yearly Energy:** {result['yearly_kwh']:.2f} kWh (${result['yearly_cost']:.2f})")
+                
+                st.markdown("---")
+                st.warning(f"💰 **Annual Cost:** ${result['yearly_cost']:.2f}")
+    
+    # ===== TAB 3: WIRE SIZING CALCULATOR =====
+    with calc_tabs[2]:
+        st.markdown("### 📏 Wire Sizing Calculator")
+        st.markdown("Calculate proper wire gauge for your installation.")
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown("#### 📥 Circuit Information")
+            circuit_current = st.number_input("Circuit Current (A)", min_value=0.0, value=20.0, step=1.0)
+            wire_length = st.number_input("One-Way Wire Length (m)", min_value=0.0, value=10.0, step=0.5)
+            system_voltage = st.number_input("System Voltage (V)", min_value=0.0, value=12.0, step=1.0, 
+                                           help="Common: 12V, 24V, 48V for DC systems")
+            max_voltage_drop = st.number_input("Max Voltage Drop (%)", min_value=0.0, max_value=10.0, value=3.0, step=0.5)
+            
+            # Wire gauge reference table
+            wire_data = {
+                'AWG': [14, 12, 10, 8, 6, 4, 2, 1, 0, 00, 000, 0000],
+                'mm²': [2.08, 3.31, 5.26, 8.37, 13.3, 21.2, 33.6, 42.4, 53.5, 67.4, 85.0, 107],
+                'Max A': [15, 20, 30, 40, 55, 70, 95, 110, 125, 145, 165, 195],
+                'Ω/km': [8.28, 5.21, 3.28, 2.06, 1.30, 0.815, 0.513, 0.407, 0.323, 0.256, 0.203, 0.161]
+            }
+            
+            if st.button(t('calculate'), key="wire_calc"):
+                # Calculate voltage drop for each wire size
+                max_drop_voltage = system_voltage * (max_voltage_drop / 100)
+                
+                recommended_wire = None
+                for i, awg in enumerate(wire_data['AWG']):
+                    resistance_ohm = (wire_data['Ω/km'][i] / 1000) * wire_length * 2  # Round trip
+                    voltage_drop = circuit_current * resistance_ohm
+                    drop_percent = (voltage_drop / system_voltage) * 100
+                    
+                    if voltage_drop <= max_drop_voltage and wire_data['Max A'][i] >= circuit_current:
+                        recommended_wire = {
+                            'awg': awg,
+                            'mm2': wire_data['mm²'][i],
+                            'max_current': wire_data['Max A'][i],
+                            'voltage_drop': voltage_drop,
+                            'drop_percent': drop_percent
+                        }
+                        break
+                
+                st.session_state.wire_result = recommended_wire
+        
+        with col2:
+            st.markdown("#### 📊 Recommendation")
+            if 'wire_result' in st.session_state and st.session_state.wire_result:
+                result = st.session_state.wire_result
+                st.success(f"✅ **Recommended Wire Size**")
+                st.markdown(f"### AWG {result['awg']} ({result['mm2']:.1f} mm²)")
+                st.info(f"**Max Current Rating:** {result['max_current']} A")
+                st.warning(f"**Voltage Drop:** {result['voltage_drop']:.2f} V ({result['drop_percent']:.2f}%)")
+                
+                st.markdown("---")
+                st.markdown("**📋 Wire Gauge Reference:**")
+                import pandas as pd
+                df = pd.DataFrame(wire_data)
+                st.dataframe(df, use_container_width=True)
+            elif 'wire_result' in st.session_state:
+                st.error("❌ No suitable wire found! Increase wire size or reduce length/current.")
+    
+    # ===== TAB 4: VOLTAGE DROP CALCULATOR =====
+    with calc_tabs[3]:
+        st.markdown("### 📉 Voltage Drop Calculator")
+        st.markdown("Calculate voltage drop in your wire run.")
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown("#### 📥 Wire Specifications")
+            wire_awg = st.selectbox("Wire Gauge (AWG)", [14, 12, 10, 8, 6, 4, 2, 1, 0, "00", "000", "0000"])
+            wire_length_vd = st.number_input("One-Way Length (m)", min_value=0.0, value=10.0, step=0.5, key="vd_length")
+            current_vd = st.number_input("Current (A)", min_value=0.0, value=20.0, step=1.0, key="vd_current")
+            voltage_vd = st.number_input("System Voltage (V)", min_value=0.0, value=12.0, step=1.0, key="vd_voltage")
+            
+            # Resistance per km for different AWG
+            resistance_map = {
+                14: 8.28, 12: 5.21, 10: 3.28, 8: 2.06, 6: 1.30, 
+                4: 0.815, 2: 0.513, 1: 0.407, 0: 0.323, 
+                "00": 0.256, "000": 0.203, "0000": 0.161
+            }
+            
+            if st.button(t('calculate'), key="vd_calc"):
+                resistance_per_km = resistance_map[wire_awg]
+                total_resistance = (resistance_per_km / 1000) * wire_length_vd * 2  # Round trip
+                voltage_drop = current_vd * total_resistance
+                drop_percent = (voltage_drop / voltage_vd) * 100
+                voltage_at_load = voltage_vd - voltage_drop
+                power_loss = current_vd * voltage_drop
+                
+                st.session_state.vd_result = {
+                    'voltage_drop': voltage_drop,
+                    'drop_percent': drop_percent,
+                    'voltage_at_load': voltage_at_load,
+                    'power_loss': power_loss,
+                    'resistance': total_resistance
+                }
+        
+        with col2:
+            st.markdown("#### 📊 Results")
+            if 'vd_result' in st.session_state:
+                result = st.session_state.vd_result
+                
+                # Color code based on voltage drop percentage
+                if result['drop_percent'] <= 3:
+                    status = "✅ Excellent"
+                    color = "green"
+                elif result['drop_percent'] <= 5:
+                    status = "⚠️ Acceptable"
+                    color = "orange"
+                else:
+                    status = "❌ Too High"
+                    color = "red"
+                
+                st.markdown(f"**Status:** :{color}[{status}]")
+                st.success(f"**Voltage Drop:** {result['voltage_drop']:.2f} V ({result['drop_percent']:.2f}%)")
+                st.info(f"**Voltage at Load:** {result['voltage_at_load']:.2f} V")
+                st.warning(f"**Power Loss:** {result['power_loss']:.2f} W")
+                st.error(f"**Wire Resistance:** {result['resistance']:.4f} Ω")
+                
+                st.markdown("---")
+                st.markdown("**📐 Guidelines:**")
+                st.markdown("- ✅ < 3%: Excellent")
+                st.markdown("- ⚠️ 3-5%: Acceptable")
+                st.markdown("- ❌ > 5%: Use larger wire")
+    
+    # ===== TAB 5: BATTERY CALCULATOR =====
+    with calc_tabs[4]:
+        st.markdown("### 🔋 Battery Calculator")
+        st.markdown("Calculate battery capacity and runtime.")
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown("#### 📥 Battery & Load Information")
+            calc_mode = st.radio("Calculate:", ["Runtime", "Required Capacity"])
+            
+            if calc_mode == "Runtime":
+                battery_voltage = st.number_input("Battery Voltage (V)", min_value=0.0, value=12.0, step=1.0, key="bat_v")
+                battery_ah = st.number_input("Battery Capacity (Ah)", min_value=0.0, value=100.0, step=10.0)
+                load_watts = st.number_input("Load Power (W)", min_value=0.0, value=120.0, step=10.0)
+                dod_percent = st.number_input("Depth of Discharge (%)", min_value=0.0, max_value=100.0, value=80.0, step=5.0)
+                efficiency = st.number_input("System Efficiency (%)", min_value=0.0, max_value=100.0, value=85.0, step=5.0)
+                
+                if st.button(t('calculate'), key="bat_runtime"):
+                    usable_capacity_ah = battery_ah * (dod_percent / 100)
+                    usable_capacity_wh = battery_voltage * usable_capacity_ah
+                    actual_usable_wh = usable_capacity_wh * (efficiency / 100)
+                    runtime_hours = actual_usable_wh / load_watts if load_watts > 0 else 0
+                    
+                    st.session_state.bat_result = {
+                        'mode': 'runtime',
+                        'runtime': runtime_hours,
+                        'usable_wh': actual_usable_wh,
+                        'usable_ah': usable_capacity_ah
+                    }
+            
+            else:  # Required Capacity
+                battery_voltage_req = st.number_input("Battery Voltage (V)", min_value=0.0, value=12.0, step=1.0, key="bat_v_req")
+                load_watts_req = st.number_input("Load Power (W)", min_value=0.0, value=120.0, step=10.0, key="load_req")
+                runtime_hours_req = st.number_input("Desired Runtime (hours)", min_value=0.0, value=8.0, step=0.5)
+                dod_percent_req = st.number_input("Depth of Discharge (%)", min_value=0.0, max_value=100.0, value=80.0, step=5.0, key="dod_req")
+                efficiency_req = st.number_input("System Efficiency (%)", min_value=0.0, max_value=100.0, value=85.0, step=5.0, key="eff_req")
+                
+                if st.button(t('calculate'), key="bat_capacity"):
+                    required_wh = load_watts_req * runtime_hours_req
+                    required_wh_with_eff = required_wh / (efficiency_req / 100)
+                    required_wh_with_dod = required_wh_with_eff / (dod_percent_req / 100)
+                    required_ah = required_wh_with_dod / battery_voltage_req
+                    
+                    st.session_state.bat_result = {
+                        'mode': 'capacity',
+                        'required_ah': required_ah,
+                        'required_wh': required_wh_with_dod,
+                        'energy_needed': required_wh
+                    }
+        
+        with col2:
+            st.markdown("#### 📊 Results")
+            if 'bat_result' in st.session_state:
+                result = st.session_state.bat_result
+                
+                if result['mode'] == 'runtime':
+                    hours = int(result['runtime'])
+                    minutes = int((result['runtime'] - hours) * 60)
+                    st.success(f"**Runtime:** {hours}h {minutes}m ({result['runtime']:.2f} hours)")
+                    st.info(f"**Usable Energy:** {result['usable_wh']:.2f} Wh ({result['usable_wh']/1000:.2f} kWh)")
+                    st.warning(f"**Usable Capacity:** {result['usable_ah']:.2f} Ah")
+                else:
+                    st.success(f"**Required Capacity:** {result['required_ah']:.2f} Ah")
+                    st.info(f"**Total Energy Storage:** {result['required_wh']:.2f} Wh ({result['required_wh']/1000:.2f} kWh)")
+                    st.warning(f"**Energy Needed:** {result['energy_needed']:.2f} Wh")
+                    
+                    # Suggest standard battery sizes
+                    st.markdown("---")
+                    st.markdown("**💡 Standard Battery Sizes:**")
+                    standard_sizes = [50, 100, 150, 200, 250, 300]
+                    for size in standard_sizes:
+                        if size >= result['required_ah']:
+                            st.markdown(f"- ✅ **{size} Ah** (Recommended)")
+                            break
+                        else:
+                            st.markdown(f"- ❌ {size} Ah (Too small)")
+    
+    # ===== TAB 6: SOLAR ARRAY CALCULATOR =====
+    with calc_tabs[5]:
+        st.markdown("### ☀️ Solar Array Calculator")
+        st.markdown("Calculate series/parallel configuration for solar panels.")
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown("#### 📥 System Requirements")
+            target_voltage = st.number_input("Target System Voltage (V)", min_value=0.0, value=48.0, step=1.0)
+            target_power = st.number_input("Target Power (W)", min_value=0.0, value=3000.0, step=100.0)
+            
+            st.markdown("#### 📥 Panel Specifications")
+            panel_voltage = st.number_input("Panel Voltage (Vmp)", min_value=0.0, value=18.0, step=0.1)
+            panel_current = st.number_input("Panel Current (Imp)", min_value=0.0, value=9.0, step=0.1)
+            panel_power = st.number_input("Panel Power (W)", min_value=0.0, value=160.0, step=10.0)
+            
+            if st.button(t('calculate'), key="solar_calc"):
+                # Calculate series and parallel configuration
+                panels_in_series = int(np.ceil(target_voltage / panel_voltage))
+                string_voltage = panels_in_series * panel_voltage
+                string_power = panels_in_series * panel_power
+                
+                num_strings = int(np.ceil(target_power / string_power))
+                total_panels = panels_in_series * num_strings
+                total_power = total_panels * panel_power
+                total_current = num_strings * panel_current
+                
+                st.session_state.solar_result = {
+                    'panels_series': panels_in_series,
+                    'num_strings': num_strings,
+                    'total_panels': total_panels,
+                    'string_voltage': string_voltage,
+                    'total_power': total_power,
+                    'total_current': total_current
+                }
+        
+        with col2:
+            st.markdown("#### 📊 Configuration")
+            if 'solar_result' in st.session_state:
+                result = st.session_state.solar_result
+                
+                st.success(f"**Configuration:** {result['panels_series']}S × {result['num_strings']}P")
+                st.info(f"**Total Panels:** {result['total_panels']} panels")
+                st.warning(f"**Total Power:** {result['total_power']} W ({result['total_power']/1000:.2f} kW)")
+                st.error(f"**System Voltage:** {result['string_voltage']:.1f} V")
+                st.info(f"**Total Current:** {result['total_current']:.1f} A")
+                
+                st.markdown("---")
+                st.markdown("**📐 Configuration Diagram:**")
+                st.code(f"""
+String 1: [{result['panels_series']} panels in series]
+String 2: [{result['panels_series']} panels in series]
+...
+String {result['num_strings']}: [{result['panels_series']} panels in series]
+
+All strings connected in parallel
+                """)
+                
+                st.markdown("---")
+                st.markdown("**🔌 Connection Details:**")
+                st.markdown(f"- Each string: {result['panels_series']} panels × {panel_voltage}V = {result['string_voltage']:.1f}V")
+                st.markdown(f"- Parallel strings: {result['num_strings']} × {panel_current}A = {result['total_current']:.1f}A")
+                st.markdown(f"- Total power: {result['total_panels']} × {panel_power}W = {result['total_power']}W")
 
 # Footer - Ultra Compact
 st.sidebar.markdown("<div style='margin: 0.75rem 0;'><hr style='margin: 0; border: none; border-top: 1px solid #e5e7eb;'></div>", unsafe_allow_html=True)
