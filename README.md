@@ -1,4 +1,16 @@
-# ☀️ Ultimate Solar Planning & Business Software
+---
+title: KHSolar - Solar Planning Software
+emoji: ☀️
+colorFrom: blue
+colorTo: purple
+sdk: streamlit
+sdk_version: 1.32.0
+app_file: app.py
+pinned: false
+license: mit
+---
+
+# ☀️ KHSolar - Solar Planning & Business Software
 
 Comprehensive solar system planning, simulation, and business management tool designed for Khmer households and solar businesses.
 
