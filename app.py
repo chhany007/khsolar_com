@@ -2,6 +2,10 @@
 KHSolar - Ultimate Solar Planning & Business Software
 """
 import streamlit as st
+
+# Page config - MUST be first Streamlit command
+st.set_page_config(page_title="KHSolar - Solar Planning Software", page_icon="☀️", layout="wide")
+
 import pandas as pd
 import numpy as np
 from datetime import datetime
@@ -38,9 +42,6 @@ def load_logo():
     return None
 
 LOGO_BASE64 = load_logo()
-
-# Page config
-st.set_page_config(page_title="KHSolar - Solar Planning Software", page_icon="☀️", layout="wide")
 
 # Custom CSS for Modern UI with Animations
 st.markdown("""
