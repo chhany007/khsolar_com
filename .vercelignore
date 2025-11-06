@@ -1,0 +1,16 @@
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+.git/
+.gitignore
+*.md
+!README.md
+.DS_Store
+*.log
+.streamlit/secrets.toml
+solar_report.docx
