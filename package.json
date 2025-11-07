@@ -1,0 +1,24 @@
+{
+  "name": "khsolar",
+  "version": "1.0.0",
+  "description": "KHSolar - Solar Planning & Business Software",
+  "main": "app.py",
+  "scripts": {
+    "build": "echo 'Building KHSolar for Netlify...'",
+    "start": "streamlit run app.py"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/chhany007/khsolar.git"
+  },
+  "keywords": [
+    "solar",
+    "energy",
+    "calculator",
+    "streamlit",
+    "khmer",
+    "cambodia"
+  ],
+  "author": "chhany007",
+  "license": "MIT"
+}
