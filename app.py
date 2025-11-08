@@ -1160,9 +1160,9 @@ else:
     logo_html = '<div style="font-size: 1.8rem;"></div>'
 
 st.sidebar.markdown(f"""
-<div style='text-align: center; padding: 0.5rem 0; margin-bottom: 0.5rem;'>
+<div style='text-align: center; padding: 0.3rem 0; margin-bottom: 0.3rem;'>
     {logo_html}
-    <div style='color: #667eea; font-size: 1.1rem; font-weight: 800; margin-top: 0.3rem;'>KHSolar - Solar Designer</div>
+    <div style='color: #667eea; font-size: 1rem; font-weight: 800; margin-top: 0.2rem;'>KHSolar</div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -1203,23 +1203,20 @@ else:
         t('nav_technician') + " 🔒"
     ], label_visibility="collapsed")
     
-    # Check if user trying to access locked features - Show popup
+    # Check if user trying to access locked features - Show message
     if "🔒" in page:
-        @st.dialog("🔒 VIP Feature Locked")
-        def show_vip_required():
-            st.warning("**This feature is only available for VIP users.**")
-            st.info("📞 Contact admin: **+855888836588** or **@chhanycls**")
-            
-            col1, col2 = st.columns(2)
-            with col1:
-                if st.button("👑 Login as VIP", use_container_width=True, type="primary"):
-                    st.session_state.show_vip_login = True
-                    st.rerun()
-            with col2:
-                if st.button("← Back", use_container_width=True):
-                    st.rerun()
+        st.warning("🔒 **This feature is only available for VIP users.**")
+        st.info("📞 Contact admin: **+855888836588** or **@chhanycls**")
         
-        show_vip_required()
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("👑 Login as VIP", use_container_width=True, type="primary"):
+                st.session_state.show_vip_login = True
+                st.rerun()
+        with col2:
+            if st.button("← Back to Dashboard", use_container_width=True):
+                st.rerun()
+        
         page = t('nav_dashboard')  # Redirect to dashboard
 
 st.sidebar.markdown("<div style='margin: 0.75rem 0;'><hr style='margin: 0; border: none; border-top: 1px solid #e5e7eb;'></div>", unsafe_allow_html=True)
@@ -1250,39 +1247,89 @@ with lang_col2:
         st.session_state.language = 'kh'
         st.rerun()
 
-# VIP Login Popup (Global - works on any page)
+# VIP Login Popup Modal (Global - works on any page)
 if st.session_state.show_vip_login:
-    # Create a modal-like container
+    # Create modal overlay with CSS
+    st.markdown("""
+    <style>
+    .modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        z-index: 9998;
+        animation: fadeIn 0.3s ease-in;
+    }
+    .modal-content {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: white;
+        padding: 2rem;
+        border-radius: 15px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        z-index: 9999;
+        max-width: 450px;
+        width: 90%;
+        animation: slideDown 0.3s ease-out;
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+    @keyframes slideDown {
+        from { 
+            opacity: 0;
+            transform: translate(-50%, -60%);
+        }
+        to { 
+            opacity: 1;
+            transform: translate(-50%, -50%);
+        }
+    }
+    </style>
+    <div class="modal-overlay"></div>
+    """, unsafe_allow_html=True)
+    
+    # Modal content
+    st.markdown('<div class="modal-content">', unsafe_allow_html=True)
+    st.markdown("### 👑 VIP Login")
+    st.markdown("**Access Premium Features**")
     st.markdown("---")
-    with st.container():
-        st.markdown("### 👑 VIP Login")
-        st.markdown("**Access Premium Features**")
-        
-        username = st.text_input("👤 Username", placeholder="Enter your username", key="vip_user_popup")
-        password = st.text_input("🔒 Password", type="password", placeholder="Enter your password", key="vip_pass_popup")
-        
-        col_a, col_b = st.columns(2)
-        with col_a:
-            if st.button("🔓 Login", type="primary", use_container_width=True):
-                if username and password:
-                    if verify_vip_login(username, password):
-                        st.session_state.vip_logged_in = True
-                        st.session_state.is_vip = True
-                        st.session_state.vip_username = username
-                        st.session_state.show_vip_login = False
-                        st.success(f"✅ Welcome, {username}!")
-                        st.rerun()
-                    else:
-                        st.error("❌ Invalid credentials")
+    
+    # Demo credentials info
+    with st.expander("📝 Demo Credentials", expanded=False):
+        st.code("Username: demo\nPassword: demo123")
+    
+    username = st.text_input("👤 Username", placeholder="Enter your username", key="vip_user_popup")
+    password = st.text_input("🔒 Password", type="password", placeholder="Enter your password", key="vip_pass_popup")
+    
+    col_a, col_b = st.columns(2)
+    with col_a:
+        if st.button("🔓 Login", type="primary", use_container_width=True):
+            if username and password:
+                if verify_vip_login(username, password):
+                    st.session_state.vip_logged_in = True
+                    st.session_state.is_vip = True
+                    st.session_state.vip_username = username
+                    st.session_state.show_vip_login = False
+                    st.success(f"✅ Welcome, {username}!")
+                    st.rerun()
                 else:
-                    st.warning("⚠️ Enter username and password")
-        with col_b:
-            if st.button("Cancel", use_container_width=True):
-                st.session_state.show_vip_login = False
-                st.rerun()
-        
-        st.info("📞 Contact: **+855888836588** or **@chhanycls**")
+                    st.error("❌ Invalid credentials")
+            else:
+                st.warning("⚠️ Enter username and password")
+    with col_b:
+        if st.button("✕ Cancel", use_container_width=True):
+            st.session_state.show_vip_login = False
+            st.rerun()
+    
     st.markdown("---")
+    st.info("📞 Contact: **+855888836588** or **@chhanycls**")
+    st.markdown('</div>', unsafe_allow_html=True)
 
 # ==================== DASHBOARD ====================
 if page == t('nav_dashboard'):
