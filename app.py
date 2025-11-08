@@ -1461,31 +1461,24 @@ with lang_col2:
         st.session_state.language = 'kh'
         st.rerun()
 
-# VIP Login Popup Modal (Global - works on any page) - CLEAN DESIGN
+# VIP Login Popup Modal (Global - works on any page) - COMPACT NO SCROLL
 if st.session_state.show_vip_login:
-    # Clean professional login dialog
-    @st.dialog("VIP Login")
+    # Ultra compact dialog that fits without scrolling
+    @st.dialog(" ")
     def vip_login_dialog():
-        # Logo display - centered and prominent
+        # Logo at top - compact size
         if LOGO_BASE64:
             st.markdown(f"""
-            <div style='text-align: center; margin-bottom: 1.5rem;'>
-                <img src='data:image/png;base64,{LOGO_BASE64}' style='width: 100px; height: 100px; margin: 0 auto; display: block; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);'>
-                <h3 style='margin: 1rem 0 0 0; color: #667eea; font-weight: 700;'>VIP Access</h3>
-            </div>
-            """, unsafe_allow_html=True)
-        else:
-            st.markdown("""
-            <div style='text-align: center; margin-bottom: 1.5rem;'>
-                <h3 style='margin: 0; color: #667eea; font-weight: 700;'>VIP Access</h3>
+            <div style='text-align: center; margin-bottom: 1rem;'>
+                <img src='data:image/png;base64,{LOGO_BASE64}' style='width: 70px; height: 70px; margin: 0 auto; display: block; border-radius: 10px;'>
             </div>
             """, unsafe_allow_html=True)
         
-        # Input fields with modern styling
-        username = st.text_input("Username", placeholder="Enter username", key="vip_user_popup")
-        password = st.text_input("Password", type="password", placeholder="Enter password", key="vip_pass_popup")
+        # Compact input fields
+        username = st.text_input("Username", placeholder="Username", key="vip_user_popup", label_visibility="collapsed")
+        password = st.text_input("Password", type="password", placeholder="Password", key="vip_pass_popup", label_visibility="collapsed")
         
-        # Buttons
+        # Compact buttons
         col1, col2 = st.columns(2)
         with col1:
             if st.button("🔓 Login", use_container_width=True, type="primary"):
@@ -1495,28 +1488,20 @@ if st.session_state.show_vip_login:
                         st.session_state.is_vip = True
                         st.session_state.vip_username = username
                         st.session_state.show_vip_login = False
-                        st.success("✅ Welcome back!")
+                        st.success("✅ Welcome!")
                         st.balloons()
                         st.rerun()
                     else:
-                        st.error("❌ Invalid credentials")
+                        st.error("❌ Invalid")
                 else:
-                    st.warning("⚠️ Please enter both fields")
+                    st.warning("⚠️ Required")
         with col2:
             if st.button("Cancel", use_container_width=True):
                 st.session_state.show_vip_login = False
                 st.rerun()
         
-        # Footer with contact
-        st.markdown("---")
-        st.markdown("""
-        <div style='text-align: center; margin-top: 1rem;'>
-            <p style='color: #6b7280; font-size: 0.85rem; margin: 0;'>
-                Need access? Contact us<br>
-                <strong style='color: #667eea;'>📞 +855 888 836 588 | 💬 @chhanycls</strong>
-            </p>
-        </div>
-        """, unsafe_allow_html=True)
+        # Minimal footer
+        st.caption("📞 +855 888 836 588 | 💬 @chhanycls")
     
     # Show the dialog
     vip_login_dialog()
