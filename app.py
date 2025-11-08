@@ -1453,109 +1453,91 @@ with lang_col2:
 
 # VIP Login Popup Modal (Global - works on any page)
 if st.session_state.show_vip_login:
-    # Simple container-based modal
-    st.markdown("---")
+    # Dark overlay background
+    st.markdown("""
+    <style>
+    .vip-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        z-index: 999;
+        animation: fadeIn 0.3s ease;
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+    </style>
+    <div class="vip-overlay"></div>
+    """, unsafe_allow_html=True)
     
-    # Create centered container
-    col1, col2, col3 = st.columns([1, 3, 1])
+    # Centered popup container
+    col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        # Header with gradient
+        st.markdown("<div style='margin-top: 15vh;'></div>", unsafe_allow_html=True)
+        
+        # Popup card
         st.markdown("""
         <div style='
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            padding: 1.5rem;
-            border-radius: 15px;
+            background: white;
+            border-radius: 20px;
+            padding: 2.5rem 2rem;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
             text-align: center;
-            margin: 1rem 0;
-            box-shadow: 0 10px 40px rgba(102, 126, 234, 0.3);
         '>
-            <h2 style='color: white; margin: 0; font-size: 1.8rem;'>👑 VIP Access</h2>
-            <p style='color: rgba(255,255,255,0.95); margin: 0.5rem 0 0 0; font-size: 0.95rem;'>Unlock Premium Solar Planning Features</p>
+            <div style='font-size: 3rem; margin-bottom: 0.5rem;'>👑</div>
+            <h2 style='color: #667eea; margin: 0 0 0.5rem 0; font-size: 1.8rem; font-weight: 800;'>VIP Login</h2>
+            <p style='color: #6b7280; margin: 0 0 2rem 0; font-size: 0.95rem;'>Access Premium Features</p>
         </div>
         """, unsafe_allow_html=True)
-        
-        # Benefits grid
-        st.markdown("""
-        <div style='display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin: 1rem 0;'>
-            <div style='background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); padding: 1rem; border-radius: 10px; text-align: center; border: 2px solid #0ea5e9;'>
-                <div style='font-size: 2rem; margin-bottom: 0.5rem;'>⚡</div>
-                <div style='font-size: 0.85rem; color: #0c4a6e; font-weight: 700;'>Advanced Simulation</div>
-            </div>
-            <div style='background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); padding: 1rem; border-radius: 10px; text-align: center; border: 2px solid #10b981;'>
-                <div style='font-size: 2rem; margin-bottom: 0.5rem;'>📊</div>
-                <div style='font-size: 0.85rem; color: #064e3b; font-weight: 700;'>Detailed Reports</div>
-            </div>
-            <div style='background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); padding: 1rem; border-radius: 10px; text-align: center; border: 2px solid #f59e0b;'>
-                <div style='font-size: 2rem; margin-bottom: 0.5rem;'>🛠️</div>
-                <div style='font-size: 0.85rem; color: #78350f; font-weight: 700;'>Technician Tools</div>
-            </div>
-            <div style='background: linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%); padding: 1rem; border-radius: 10px; text-align: center; border: 2px solid #ec4899;'>
-                <div style='font-size: 2rem; margin-bottom: 0.5rem;'>💾</div>
-                <div style='font-size: 0.85rem; color: #831843; font-weight: 700;'>Export Options</div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        # Demo credentials - prominent display
-        st.info("🎯 **Demo Credentials** - Try it now!")
-        col_demo1, col_demo2 = st.columns(2)
-        with col_demo1:
-            st.code("Username: demo", language="text")
-        with col_demo2:
-            st.code("Password: demo123", language="text")
-        
-        st.markdown("<br>", unsafe_allow_html=True)
         
         # Login form
         username = st.text_input(
-            "👤 Username", 
-            placeholder="Enter your username", 
-            key="vip_user_popup"
+            "Username", 
+            placeholder="Enter username", 
+            key="vip_user_popup",
+            label_visibility="collapsed"
         )
         password = st.text_input(
-            "🔒 Password", 
+            "Password", 
             type="password", 
-            placeholder="Enter your password", 
-            key="vip_pass_popup"
+            placeholder="Enter password", 
+            key="vip_pass_popup",
+            label_visibility="collapsed"
         )
         
-        # Action buttons
-        col_a, col_b = st.columns([2, 1])
+        # Demo hint
+        st.caption("💡 Demo: **demo** / **demo123**")
+        
+        # Buttons
+        col_a, col_b = st.columns(2)
         with col_a:
-            if st.button("🔓 Login to VIP", type="primary", use_container_width=True, key="vip_login_submit"):
+            if st.button("🔓 Login", type="primary", use_container_width=True, key="vip_login_submit"):
                 if username and password:
                     if verify_vip_login(username, password):
                         st.session_state.vip_logged_in = True
                         st.session_state.is_vip = True
                         st.session_state.vip_username = username
                         st.session_state.show_vip_login = False
-                        st.success(f"✅ Welcome back, {username}!")
+                        st.success(f"✅ Welcome, {username}!")
                         st.balloons()
                         st.rerun()
                     else:
-                        st.error("❌ Invalid credentials. Please try again.")
+                        st.error("❌ Invalid credentials")
                 else:
-                    st.warning("⚠️ Please enter both username and password")
+                    st.warning("⚠️ Enter username & password")
         with col_b:
-            if st.button("✕ Cancel", use_container_width=True, key="vip_login_cancel"):
+            if st.button("Cancel", use_container_width=True, key="vip_login_cancel"):
                 st.session_state.show_vip_login = False
                 st.rerun()
         
-        # Contact info
-        st.markdown("---")
-        st.markdown("""
-        <div style='text-align: center; padding: 1rem; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 10px;'>
-            <div style='font-size: 0.9rem; color: #495057; margin-bottom: 0.5rem;'>
-                <strong>💼 Need VIP Access?</strong>
-            </div>
-            <div style='font-size: 1rem; color: #212529;'>
-                📞 <strong>+855 888 836 588</strong><br>
-                💬 <strong>@chhanycls</strong>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-    
-    st.markdown("---")
+        # Footer
+        st.caption("📞 **+855 888 836 588** | 💬 **@chhanycls**")
+        
+        st.markdown("<div style='margin-bottom: 2rem;'></div>", unsafe_allow_html=True)
 
 # ==================== DASHBOARD ====================
 if page == t('nav_dashboard'):
