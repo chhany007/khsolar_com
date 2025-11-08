@@ -1456,67 +1456,53 @@ with lang_col2:
         st.session_state.language = 'kh'
         st.rerun()
 
-# VIP Login Popup Modal (Global - works on any page) - CENTERED ON WHOLE SCREEN
+# VIP Login Popup Modal (Global - works on any page) - ADMIN STYLE
 if st.session_state.show_vip_login:
-    # Centered on entire viewport, not just sidebar
-    @st.dialog("VIP Login", width="small")
+    # Using same design as Admin Pricing Control
+    @st.dialog("👑 VIP Authentication")
     def vip_login_dialog():
-        # Center on entire screen with logo
-        st.markdown(f"""
-        <style>
-        /* Center dialog on entire viewport */
-        [data-testid="stDialog"] {{
-            position: fixed !important;
-            left: 50% !important;
-            top: 50% !important;
-            transform: translate(-50%, -50%) !important;
-            max-width: 360px !important;
-            max-height: 90vh !important;
-        }}
-        [data-testid="stDialog"] > div {{
-            padding: 0.8rem !important;
-        }}
-        /* Minimal spacing */
-        .stTextInput, .stButton {{
-            margin-bottom: 0.4rem !important;
-        }}
-        </style>
-        <div style='text-align: center; margin-bottom: 0.5rem;'>
-            {"<img src='data:image/png;base64," + LOGO_BASE64 + "' style='width: 60px; height: 60px; margin: 0 auto 0.5rem; display: block; border-radius: 10px;'>" if LOGO_BASE64 else "<div style='font-size: 2rem; margin-bottom: 0.5rem;'>👑</div>"}
-            <p style='color: #6b7280; font-size: 0.85rem; margin: 0;'>VIP Access</p>
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown("**Enter credentials to access premium features**")
         
-        # Compact form
+        # Logo display
+        if LOGO_BASE64:
+            st.markdown(f"""
+            <div style='text-align: center; margin-bottom: 1rem;'>
+                <img src='data:image/png;base64,{LOGO_BASE64}' style='width: 80px; height: 80px; margin: 0 auto; display: block; border-radius: 10px;'>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        # Input fields
         username = st.text_input("Username", placeholder="Username", key="vip_user_popup", label_visibility="collapsed")
-        password = st.text_input("Password", type="password", placeholder="Password", key="vip_pass_popup", label_visibility="collapsed")
+        password = st.text_input("🔑 Password", type="password", placeholder="Password", key="vip_pass_popup", label_visibility="collapsed")
         
-        # Demo hint
-        st.caption("💡 **demo** / **demo123**")
+        # Demo credentials hint
+        st.info("💡 **Demo credentials:** demo / demo123")
         
-        # Login button
-        if st.button("🔓 Log In", type="primary", use_container_width=True, key="vip_login_submit"):
-            if username and password:
-                if verify_vip_login(username, password):
-                    st.session_state.vip_logged_in = True
-                    st.session_state.is_vip = True
-                    st.session_state.vip_username = username
-                    st.session_state.show_vip_login = False
-                    st.success(f"✅ Welcome!")
-                    st.balloons()
-                    st.rerun()
+        # Buttons
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("🔓 Unlock VIP", use_container_width=True, type="primary"):
+                if username and password:
+                    if verify_vip_login(username, password):
+                        st.session_state.vip_logged_in = True
+                        st.session_state.is_vip = True
+                        st.session_state.vip_username = username
+                        st.session_state.show_vip_login = False
+                        st.success("✅ Access granted!")
+                        st.balloons()
+                        st.rerun()
+                    else:
+                        st.error("❌ Incorrect credentials")
                 else:
-                    st.error("❌ Invalid")
-            else:
-                st.warning("⚠️ Required")
-        
-        # Cancel button
-        if st.button("Cancel", use_container_width=True, key="vip_login_cancel"):
-            st.session_state.show_vip_login = False
-            st.rerun()
+                    st.warning("⚠️ Please enter credentials")
+        with col2:
+            if st.button("Cancel", use_container_width=True):
+                st.session_state.show_vip_login = False
+                st.rerun()
         
         # Footer
-        st.caption("📞 +855 888 836 588")
+        st.markdown("---")
+        st.caption("📞 +855 888 836 588 | 💬 @chhanycls")
     
     # Show the dialog
     vip_login_dialog()
