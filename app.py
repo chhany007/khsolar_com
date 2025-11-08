@@ -1451,93 +1451,155 @@ with lang_col2:
         st.session_state.language = 'kh'
         st.rerun()
 
-# VIP Login Popup Modal (Global - works on any page)
+# VIP Login Popup Modal (Global - works on any page) - Telegram Style
 if st.session_state.show_vip_login:
-    # Dark overlay background
+    # Full page overlay with blur effect (Telegram style)
     st.markdown("""
     <style>
-    .vip-overlay {
+    /* Telegram-style overlay */
+    .telegram-overlay {
         position: fixed;
         top: 0;
         left: 0;
         width: 100%;
         height: 100%;
-        background: rgba(0, 0, 0, 0.7);
-        z-index: 999;
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.95) 0%, rgba(118, 75, 162, 0.95) 100%);
+        backdrop-filter: blur(20px);
+        z-index: 999999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         animation: fadeIn 0.3s ease;
     }
     @keyframes fadeIn {
         from { opacity: 0; }
         to { opacity: 1; }
     }
+    /* Hide main content when modal is open */
+    .main > div:first-child {
+        filter: blur(5px);
+    }
     </style>
-    <div class="vip-overlay"></div>
+    <div class="telegram-overlay"></div>
     """, unsafe_allow_html=True)
     
-    # Centered popup container
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
-        st.markdown("<div style='margin-top: 15vh;'></div>", unsafe_allow_html=True)
+    # Centered login card (Telegram style)
+    col_left, col_center, col_right = st.columns([1, 2, 1])
+    with col_center:
+        st.markdown("<div style='margin-top: 10vh;'></div>", unsafe_allow_html=True)
         
-        # Popup card
+        # Login card with Telegram design
         st.markdown("""
         <div style='
             background: white;
-            border-radius: 20px;
-            padding: 2.5rem 2rem;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+            border-radius: 16px;
+            padding: 3rem 2.5rem;
+            box-shadow: 0 8px 40px rgba(0,0,0,0.25);
             text-align: center;
+            max-width: 400px;
+            margin: 0 auto;
         '>
-            <div style='font-size: 3rem; margin-bottom: 0.5rem;'>👑</div>
-            <h2 style='color: #667eea; margin: 0 0 0.5rem 0; font-size: 1.8rem; font-weight: 800;'>VIP Login</h2>
-            <p style='color: #6b7280; margin: 0 0 2rem 0; font-size: 0.95rem;'>Access Premium Features</p>
+            <div style='
+                width: 80px;
+                height: 80px;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                border-radius: 50%;
+                margin: 0 auto 1.5rem auto;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+            '>
+                <span style='font-size: 2.5rem; color: white;'>👑</span>
+            </div>
+            <h1 style='
+                color: #1a1a1a;
+                margin: 0 0 0.5rem 0;
+                font-size: 1.75rem;
+                font-weight: 700;
+                letter-spacing: -0.5px;
+            '>VIP Login</h1>
+            <p style='
+                color: #8e8e93;
+                margin: 0 0 2rem 0;
+                font-size: 0.95rem;
+                font-weight: 400;
+            '>Sign in to access premium features</p>
         </div>
         """, unsafe_allow_html=True)
         
-        # Login form
+        # Input fields (Telegram style - clean and minimal)
         username = st.text_input(
-            "Username", 
-            placeholder="Enter username", 
+            "Username",
+            placeholder="Username",
             key="vip_user_popup",
             label_visibility="collapsed"
         )
+        
         password = st.text_input(
-            "Password", 
-            type="password", 
-            placeholder="Enter password", 
+            "Password",
+            type="password",
+            placeholder="Password",
             key="vip_pass_popup",
             label_visibility="collapsed"
         )
         
-        # Demo hint
-        st.caption("💡 Demo: **demo** / **demo123**")
+        # Demo credentials hint
+        st.markdown("""
+        <div style='
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 12px;
+            padding: 0.75rem 1rem;
+            margin: 1rem 0;
+            text-align: center;
+        '>
+            <span style='color: white; font-size: 0.9rem;'>
+                💡 <strong>Demo:</strong> demo / demo123
+            </span>
+        </div>
+        """, unsafe_allow_html=True)
         
-        # Buttons
-        col_a, col_b = st.columns(2)
-        with col_a:
-            if st.button("🔓 Login", type="primary", use_container_width=True, key="vip_login_submit"):
-                if username and password:
-                    if verify_vip_login(username, password):
-                        st.session_state.vip_logged_in = True
-                        st.session_state.is_vip = True
-                        st.session_state.vip_username = username
-                        st.session_state.show_vip_login = False
-                        st.success(f"✅ Welcome, {username}!")
-                        st.balloons()
-                        st.rerun()
-                    else:
-                        st.error("❌ Invalid credentials")
+        # Login button (Telegram style - full width primary)
+        if st.button("Log In", type="primary", use_container_width=True, key="vip_login_submit"):
+            if username and password:
+                if verify_vip_login(username, password):
+                    st.session_state.vip_logged_in = True
+                    st.session_state.is_vip = True
+                    st.session_state.vip_username = username
+                    st.session_state.show_vip_login = False
+                    st.success(f"✅ Welcome, {username}!")
+                    st.balloons()
+                    st.rerun()
                 else:
-                    st.warning("⚠️ Enter username & password")
-        with col_b:
-            if st.button("Cancel", use_container_width=True, key="vip_login_cancel"):
-                st.session_state.show_vip_login = False
-                st.rerun()
+                    st.error("❌ Invalid username or password")
+            else:
+                st.warning("⚠️ Please enter username and password")
         
-        # Footer
-        st.caption("📞 **+855 888 836 588** | 💬 **@chhanycls**")
+        # Cancel button (Telegram style - text button)
+        if st.button("Cancel", use_container_width=True, key="vip_login_cancel"):
+            st.session_state.show_vip_login = False
+            st.rerun()
         
-        st.markdown("<div style='margin-bottom: 2rem;'></div>", unsafe_allow_html=True)
+        # Footer info
+        st.markdown("""
+        <div style='
+            text-align: center;
+            margin-top: 2rem;
+            padding: 1rem;
+            background: rgba(255,255,255,0.15);
+            border-radius: 12px;
+            border: 1px solid rgba(255,255,255,0.2);
+        '>
+            <p style='color: white; margin: 0; font-size: 0.9rem;'>
+                <strong>Need VIP Access?</strong><br>
+                📞 +855 888 836 588<br>
+                💬 @chhanycls
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        st.markdown("<div style='margin-bottom: 5vh;'></div>", unsafe_allow_html=True)
 
 # ==================== DASHBOARD ====================
 if page == t('nav_dashboard'):
