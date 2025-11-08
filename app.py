@@ -1451,165 +1451,104 @@ with lang_col2:
         st.session_state.language = 'kh'
         st.rerun()
 
-# VIP Login Popup Modal (Global - works on any page) - TRUE POPUP
+# VIP Login Popup Modal (Global - works on any page) - WORKING POPUP
 if st.session_state.show_vip_login:
-    # JavaScript to create TRUE modal popup
-    st.components.v1.html("""
-    <script>
-    // Create modal container
-    const modalHTML = `
-        <div id="vipModal" style="
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.75);
-            backdrop-filter: blur(8px);
-            z-index: 999999;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            animation: fadeIn 0.3s ease;
-        ">
-            <div style="
-                background: white;
-                border-radius: 20px;
-                padding: 2.5rem 2rem;
-                box-shadow: 0 20px 60px rgba(0,0,0,0.4);
-                max-width: 420px;
-                width: 90%;
-                text-align: center;
-                animation: slideUp 0.4s ease;
-            ">
-                <div style="
-                    width: 80px;
-                    height: 80px;
-                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                    border-radius: 50%;
-                    margin: 0 auto 1.5rem;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
-                ">
-                    <span style="font-size: 2.5rem;">👑</span>
-                </div>
-                <h2 style="color: #1a1a1a; margin: 0 0 0.5rem 0; font-size: 1.8rem; font-weight: 700;">VIP Login</h2>
-                <p style="color: #8e8e93; margin: 0 0 1.5rem 0; font-size: 0.95rem;">Access Premium Features</p>
-                <div id="loginFormContainer"></div>
-            </div>
-        </div>
-        <style>
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-        @keyframes slideUp {
-            from { 
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to { 
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-        </style>
-    `;
-    
-    // Insert modal into page
-    if (!document.getElementById('vipModal')) {
-        document.body.insertAdjacentHTML('beforeend', modalHTML);
-    }
-    </script>
-    """, height=0)
-    
-    # Streamlit form inside the modal area
+    # Create overlay and modal with CSS
     st.markdown("""
-    <div style='
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        z-index: 9999999;
-        background: white;
-        padding: 2rem;
-        border-radius: 20px;
-        box-shadow: 0 20px 60px rgba(0,0,0,0.4);
-        max-width: 420px;
-        width: 90%;
-    '>
-    """, unsafe_allow_html=True)
-    
-    # Header
-    st.markdown("""
-    <div style='text-align: center; margin-bottom: 1.5rem;'>
-        <div style='
-            width: 80px;
-            height: 80px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 50%;
-            margin: 0 auto 1rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
-        '>
-            <span style='font-size: 2.5rem;'>👑</span>
-        </div>
-        <h2 style='color: #1a1a1a; margin: 0 0 0.5rem 0; font-size: 1.8rem; font-weight: 700;'>VIP Login</h2>
-        <p style='color: #8e8e93; margin: 0; font-size: 0.95rem;'>Access Premium Features</p>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    # Login form
-    username = st.text_input("Username", placeholder="Username", key="vip_user_popup", label_visibility="collapsed")
-    password = st.text_input("Password", type="password", placeholder="Password", key="vip_pass_popup", label_visibility="collapsed")
-    
-    # Demo hint
-    st.info("💡 **Demo:** demo / demo123")
-    
-    # Buttons
-    col1, col2 = st.columns(2)
-    with col1:
-        if st.button("🔓 Log In", type="primary", use_container_width=True, key="vip_login_submit"):
-            if username and password:
-                if verify_vip_login(username, password):
-                    st.session_state.vip_logged_in = True
-                    st.session_state.is_vip = True
-                    st.session_state.vip_username = username
-                    st.session_state.show_vip_login = False
-                    st.success(f"✅ Welcome, {username}!")
-                    st.balloons()
-                    st.rerun()
-                else:
-                    st.error("❌ Invalid credentials")
-            else:
-                st.warning("⚠️ Enter credentials")
-    with col2:
-        if st.button("Cancel", use_container_width=True, key="vip_login_cancel"):
-            st.session_state.show_vip_login = False
-            st.rerun()
-    
-    # Footer
-    st.caption("📞 **+855 888 836 588** | 💬 **@chhanycls**")
-    
-    st.markdown("</div>", unsafe_allow_html=True)
-    
-    # Dark overlay background
-    st.markdown("""
-    <div style='
+    <style>
+    /* Modal overlay */
+    .modal-overlay {
         position: fixed;
         top: 0;
         left: 0;
         width: 100%;
         height: 100%;
         background: rgba(0, 0, 0, 0.75);
-        backdrop-filter: blur(8px);
-        z-index: 999999;
-    '></div>
+        z-index: 999998;
+        animation: fadeIn 0.3s ease;
+    }
+    /* Center the modal container */
+    .element-container:has(.modal-content) {
+        position: fixed !important;
+        top: 50% !important;
+        left: 50% !important;
+        transform: translate(-50%, -50%) !important;
+        z-index: 999999 !important;
+        width: 90% !important;
+        max-width: 420px !important;
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+    </style>
+    <div class="modal-overlay"></div>
     """, unsafe_allow_html=True)
+    
+    # Create modal content container
+    with st.container():
+        st.markdown('<div class="modal-content">', unsafe_allow_html=True)
+        
+        # White card design
+        st.markdown("""
+        <div style='
+            background: white;
+            border-radius: 20px;
+            padding: 2.5rem 2rem;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+            text-align: center;
+        '>
+            <div style='
+                width: 80px;
+                height: 80px;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                border-radius: 50%;
+                margin: 0 auto 1.5rem;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+            '>
+                <span style='font-size: 2.5rem;'>👑</span>
+            </div>
+            <h2 style='color: #1a1a1a; margin: 0 0 0.5rem 0; font-size: 1.8rem; font-weight: 700;'>VIP Login</h2>
+            <p style='color: #8e8e93; margin: 0 0 1.5rem 0; font-size: 0.95rem;'>Access Premium Features</p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # Login form
+        username = st.text_input("Username", placeholder="Username", key="vip_user_popup", label_visibility="collapsed")
+        password = st.text_input("Password", type="password", placeholder="Password", key="vip_pass_popup", label_visibility="collapsed")
+        
+        # Demo hint
+        st.info("💡 **Demo:** demo / demo123")
+        
+        # Buttons
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("🔓 Log In", type="primary", use_container_width=True, key="vip_login_submit"):
+                if username and password:
+                    if verify_vip_login(username, password):
+                        st.session_state.vip_logged_in = True
+                        st.session_state.is_vip = True
+                        st.session_state.vip_username = username
+                        st.session_state.show_vip_login = False
+                        st.success(f"✅ Welcome, {username}!")
+                        st.balloons()
+                        st.rerun()
+                    else:
+                        st.error("❌ Invalid credentials")
+                else:
+                    st.warning("⚠️ Enter credentials")
+        with col2:
+            if st.button("Cancel", use_container_width=True, key="vip_login_cancel"):
+                st.session_state.show_vip_login = False
+                st.rerun()
+        
+        # Footer
+        st.caption("📞 **+855 888 836 588** | 💬 **@chhanycls**")
+        
+        st.markdown('</div>', unsafe_allow_html=True)
 
 # ==================== DASHBOARD ====================
 if page == t('nav_dashboard'):
