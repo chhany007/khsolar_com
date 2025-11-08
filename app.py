@@ -4,7 +4,17 @@ KHSolar - Ultimate Solar Planning & Business Software
 import streamlit as st
 
 # Page config - MUST be first Streamlit command
-st.set_page_config(page_title="KHSolar - Solar Planning Software", page_icon="☀️", layout="wide")
+st.set_page_config(
+    page_title="KHSolar - Solar Planning Software", 
+    page_icon="☀️", 
+    layout="wide",
+    initial_sidebar_state="expanded",
+    menu_items={
+        'Get Help': None,
+        'Report a bug': None,
+        'About': None
+    }
+)
 
 import pandas as pd
 import numpy as np
@@ -46,6 +56,26 @@ LOGO_BASE64 = load_logo()
 # Custom CSS for Modern UI with Animations
 st.markdown("""
 <style>
+    /* Hide Streamlit Menu and Footer */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    
+    /* Hide the hamburger menu button */
+    button[kind="header"] {
+        display: none !important;
+    }
+    
+    /* Hide Streamlit branding */
+    .viewerBadge_container__1QSob {
+        display: none !important;
+    }
+    
+    /* Remove top padding caused by hidden header */
+    .main > div {
+        padding-top: 1rem;
+    }
+    
     /* Smooth Page Transitions */
     .main {
         padding: 1rem 2rem;
