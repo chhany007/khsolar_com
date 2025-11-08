@@ -16,6 +16,10 @@ st.set_page_config(
     }
 )
 
+# Disable Streamlit's default caching to improve loading speed
+import streamlit.web.bootstrap as bootstrap
+bootstrap.load_config_options = lambda: None
+
 import pandas as pd
 import numpy as np
 from datetime import datetime
@@ -41,14 +45,17 @@ from models import (
     FinancialAnalysis
 )
 
-# Load logo once at startup
-@st.cache_data
+# Load logo once at startup with caching
+@st.cache_data(ttl=3600)  # Cache for 1 hour
 def load_logo():
     """Load and encode logo image"""
-    logo_path = Path("logo/logo.png")
-    if logo_path.exists():
-        with open(logo_path, "rb") as f:
-            return base64.b64encode(f.read()).decode()
+    try:
+        logo_path = Path("logo/logo.png")
+        if logo_path.exists():
+            with open(logo_path, "rb") as f:
+                return base64.b64encode(f.read()).decode()
+    except:
+        pass
     return None
 
 LOGO_BASE64 = load_logo()
@@ -1666,15 +1673,23 @@ if st.session_state.show_vip_login:
         help="Enter your VIP password"
     )
     
-    # Demo credentials (collapsible)
-    with st.expander("🎯 Need Test Credentials?", expanded=False):
-        st.markdown("""
-        <div style='background: #f8f9fa; padding: 1rem; border-radius: 8px; border-left: 4px solid #667eea;'>
-            <strong>Demo Account:</strong><br>
-            Username: <code>demo</code><br>
-            Password: <code>demo123</code>
+    # Demo credentials - Always visible
+    st.markdown("""
+    <div style='background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%); padding: 0.75rem 1rem; border-radius: 10px; border-left: 4px solid #f59e0b; margin-bottom: 1rem;'>
+        <div style='display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;'>
+            <span style='font-size: 1.2rem;'>🎯</span>
+            <strong style='color: #92400e; font-size: 0.9rem;'>Demo Credentials</strong>
         </div>
-        """, unsafe_allow_html=True)
+        <div style='background: white; padding: 0.6rem; border-radius: 6px; font-family: monospace;'>
+            <div style='color: #1e40af; font-size: 0.85rem; margin-bottom: 0.3rem;'>
+                <strong>Username:</strong> <code style='background: #dbeafe; padding: 0.2rem 0.5rem; border-radius: 4px;'>demo</code>
+            </div>
+            <div style='color: #1e40af; font-size: 0.85rem;'>
+                <strong>Password:</strong> <code style='background: #dbeafe; padding: 0.2rem 0.5rem; border-radius: 4px;'>demo123</code>
+            </div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
     
     st.markdown("<br>", unsafe_allow_html=True)
     
@@ -1719,7 +1734,8 @@ if st.session_state.show_vip_login:
 # ==================== DASHBOARD ====================
 if page == t('nav_dashboard'):
     
-    # Remove top hero section completely to save space
+    # Compact header with minimal spacing
+    st.markdown("<div style='margin-bottom: 0.5rem;'></div>", unsafe_allow_html=True)
     
     # Enhanced Customer Information Section
     if st.session_state.customer_info['name'] or st.session_state.customer_info['company']:
@@ -1734,9 +1750,9 @@ if page == t('nav_dashboard'):
         st.markdown(f"""
         <div style="
             background: linear-gradient(135deg, #10b981 0%, #059669 100%); 
-            padding: 1.2rem; 
-            border-radius: 12px; 
-            margin-bottom: 0.75rem;
+            padding: 0.8rem 1rem; 
+            border-radius: 10px; 
+            margin-bottom: 0.5rem;
             box-shadow: 0 4px 16px rgba(16, 185, 129, 0.2);
             border: 1px solid rgba(255, 255, 255, 0.18);
         ">
