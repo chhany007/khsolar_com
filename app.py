@@ -1453,79 +1453,56 @@ with lang_col2:
 
 # VIP Login Popup Modal (Global - works on any page)
 if st.session_state.show_vip_login:
-    # Simplified modal with better Streamlit widget compatibility
-    st.markdown("""
-    <style>
-    .vip-login-container {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.75);
-        backdrop-filter: blur(8px);
-        z-index: 999999;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        animation: fadeIn 0.3s ease;
-    }
-    @keyframes fadeIn {
-        from { opacity: 0; }
-        to { opacity: 1; }
-    }
-    </style>
-    <div class="vip-login-container"></div>
-    """, unsafe_allow_html=True)
+    # Simple container-based modal
+    st.markdown("---")
     
-    # Create centered container for modal content
-    col1, col2, col3 = st.columns([1, 2, 1])
+    # Create centered container
+    col1, col2, col3 = st.columns([1, 3, 1])
     with col2:
-        # Modal header
+        # Header with gradient
         st.markdown("""
         <div style='
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             padding: 1.5rem;
-            border-radius: 15px 15px 0 0;
+            border-radius: 15px;
             text-align: center;
-            margin-top: 10vh;
+            margin: 1rem 0;
+            box-shadow: 0 10px 40px rgba(102, 126, 234, 0.3);
         '>
             <h2 style='color: white; margin: 0; font-size: 1.8rem;'>👑 VIP Access</h2>
             <p style='color: rgba(255,255,255,0.95); margin: 0.5rem 0 0 0; font-size: 0.95rem;'>Unlock Premium Solar Planning Features</p>
         </div>
         """, unsafe_allow_html=True)
         
-        # Modal body with white background
-        st.markdown("""
-        <div style='
-            background: white;
-            padding: 1.5rem;
-            border-radius: 0 0 15px 15px;
-            box-shadow: 0 25px 80px rgba(0,0,0,0.3);
-        '>
-        """, unsafe_allow_html=True)
-        
-        # VIP Benefits showcase
+        # Benefits grid
         st.markdown("""
         <div style='display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin: 1rem 0;'>
-            <div style='background: #f8f9fa; padding: 0.75rem; border-radius: 10px; text-align: center; border: 1px solid #e9ecef;'>
-                <div style='font-size: 1.5rem; margin-bottom: 0.25rem;'>⚡</div>
-                <div style='font-size: 0.8rem; color: #495057; font-weight: 600;'>Advanced Simulation</div>
+            <div style='background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); padding: 1rem; border-radius: 10px; text-align: center; border: 2px solid #0ea5e9;'>
+                <div style='font-size: 2rem; margin-bottom: 0.5rem;'>⚡</div>
+                <div style='font-size: 0.85rem; color: #0c4a6e; font-weight: 700;'>Advanced Simulation</div>
             </div>
-            <div style='background: #f8f9fa; padding: 0.75rem; border-radius: 10px; text-align: center; border: 1px solid #e9ecef;'>
-                <div style='font-size: 1.5rem; margin-bottom: 0.25rem;'>📊</div>
-                <div style='font-size: 0.8rem; color: #495057; font-weight: 600;'>Detailed Reports</div>
+            <div style='background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); padding: 1rem; border-radius: 10px; text-align: center; border: 2px solid #10b981;'>
+                <div style='font-size: 2rem; margin-bottom: 0.5rem;'>📊</div>
+                <div style='font-size: 0.85rem; color: #064e3b; font-weight: 700;'>Detailed Reports</div>
             </div>
-            <div style='background: #f8f9fa; padding: 0.75rem; border-radius: 10px; text-align: center; border: 1px solid #e9ecef;'>
-                <div style='font-size: 1.5rem; margin-bottom: 0.25rem;'>🛠️</div>
-                <div style='font-size: 0.8rem; color: #495057; font-weight: 600;'>Technician Tools</div>
+            <div style='background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); padding: 1rem; border-radius: 10px; text-align: center; border: 2px solid #f59e0b;'>
+                <div style='font-size: 2rem; margin-bottom: 0.5rem;'>🛠️</div>
+                <div style='font-size: 0.85rem; color: #78350f; font-weight: 700;'>Technician Tools</div>
             </div>
-            <div style='background: #f8f9fa; padding: 0.75rem; border-radius: 10px; text-align: center; border: 1px solid #e9ecef;'>
-                <div style='font-size: 1.5rem; margin-bottom: 0.25rem;'>💾</div>
-                <div style='font-size: 0.8rem; color: #495057; font-weight: 600;'>Export Options</div>
+            <div style='background: linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%); padding: 1rem; border-radius: 10px; text-align: center; border: 2px solid #ec4899;'>
+                <div style='font-size: 2rem; margin-bottom: 0.5rem;'>💾</div>
+                <div style='font-size: 0.85rem; color: #831843; font-weight: 700;'>Export Options</div>
             </div>
         </div>
         """, unsafe_allow_html=True)
+        
+        # Demo credentials - prominent display
+        st.info("🎯 **Demo Credentials** - Try it now!")
+        col_demo1, col_demo2 = st.columns(2)
+        with col_demo1:
+            st.code("Username: demo", language="text")
+        with col_demo2:
+            st.code("Password: demo123", language="text")
         
         st.markdown("<br>", unsafe_allow_html=True)
         
@@ -1533,34 +1510,14 @@ if st.session_state.show_vip_login:
         username = st.text_input(
             "👤 Username", 
             placeholder="Enter your username", 
-            key="vip_user_popup",
-            help="Enter your VIP username"
+            key="vip_user_popup"
         )
         password = st.text_input(
             "🔒 Password", 
             type="password", 
             placeholder="Enter your password", 
-            key="vip_pass_popup",
-            help="Enter your VIP password"
+            key="vip_pass_popup"
         )
-        
-        # Demo credentials - Always visible
-        st.markdown("""
-        <div style='background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%); padding: 0.75rem 1rem; border-radius: 10px; border-left: 4px solid #f59e0b; margin: 1rem 0;'>
-            <div style='display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;'>
-                <span style='font-size: 1.2rem;'>🎯</span>
-                <strong style='color: #92400e; font-size: 0.9rem;'>Demo Credentials</strong>
-            </div>
-            <div style='background: white; padding: 0.6rem; border-radius: 6px; font-family: monospace;'>
-                <div style='color: #1e40af; font-size: 0.85rem; margin-bottom: 0.3rem;'>
-                    <strong>Username:</strong> <code style='background: #dbeafe; padding: 0.2rem 0.5rem; border-radius: 4px;'>demo</code>
-                </div>
-                <div style='color: #1e40af; font-size: 0.85rem;'>
-                    <strong>Password:</strong> <code style='background: #dbeafe; padding: 0.2rem 0.5rem; border-radius: 4px;'>demo123</code>
-                </div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
         
         # Action buttons
         col_a, col_b = st.columns([2, 1])
@@ -1580,24 +1537,25 @@ if st.session_state.show_vip_login:
                 else:
                     st.warning("⚠️ Please enter both username and password")
         with col_b:
-            if st.button("Cancel", use_container_width=True, key="vip_login_cancel"):
+            if st.button("✕ Cancel", use_container_width=True, key="vip_login_cancel"):
                 st.session_state.show_vip_login = False
                 st.rerun()
         
         # Contact info
-        st.markdown("<hr style='margin: 1rem 0; border: none; border-top: 1px solid #e9ecef;'>", unsafe_allow_html=True)
+        st.markdown("---")
         st.markdown("""
-        <div style='text-align: center; padding: 0.5rem; background: #f8f9fa; border-radius: 8px; margin-bottom: 1rem;'>
-            <div style='font-size: 0.85rem; color: #6c757d; margin-bottom: 0.5rem;'>
-                <strong>Need VIP Access?</strong>
+        <div style='text-align: center; padding: 1rem; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 10px;'>
+            <div style='font-size: 0.9rem; color: #495057; margin-bottom: 0.5rem;'>
+                <strong>💼 Need VIP Access?</strong>
             </div>
-            <div style='font-size: 0.9rem;'>
-                📞 <strong>+855 888 836 588</strong> | 
+            <div style='font-size: 1rem; color: #212529;'>
+                📞 <strong>+855 888 836 588</strong><br>
                 💬 <strong>@chhanycls</strong>
             </div>
         </div>
-        </div>
         """, unsafe_allow_html=True)
+    
+    st.markdown("---")
 
 # ==================== DASHBOARD ====================
 if page == t('nav_dashboard'):
