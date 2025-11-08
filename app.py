@@ -1451,72 +1451,70 @@ with lang_col2:
         st.session_state.language = 'kh'
         st.rerun()
 
-# VIP Login Popup Modal (Global - works on any page) - SIMPLE WORKING VERSION
+# VIP Login Popup Modal (Global - works on any page) - CENTERED ON WHOLE SCREEN
 if st.session_state.show_vip_login:
-    # Simple centered dialog without overlay blocking
-    st.markdown("---")
-    st.markdown("<br><br>", unsafe_allow_html=True)
-    
-    # Center the login box
-    col1, col2, col3 = st.columns([1, 2, 1])
-    with col2:
-        # Card header
-        st.markdown("""
-        <div style='
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            padding: 2rem;
-            border-radius: 20px 20px 0 0;
-            text-align: center;
-            box-shadow: 0 10px 40px rgba(102, 126, 234, 0.3);
-        '>
-            <div style='font-size: 3rem; margin-bottom: 0.5rem;'>👑</div>
-            <h2 style='color: white; margin: 0; font-size: 1.8rem; font-weight: 700;'>VIP Login</h2>
-            <p style='color: rgba(255,255,255,0.9); margin: 0.5rem 0 0 0; font-size: 0.95rem;'>Access Premium Features</p>
+    # Centered on entire viewport, not just sidebar
+    @st.dialog("VIP Login", width="small")
+    def vip_login_dialog():
+        # Center on entire screen with logo
+        st.markdown(f"""
+        <style>
+        /* Center dialog on entire viewport */
+        [data-testid="stDialog"] {{
+            position: fixed !important;
+            left: 50% !important;
+            top: 50% !important;
+            transform: translate(-50%, -50%) !important;
+            max-width: 360px !important;
+            max-height: 90vh !important;
+        }}
+        [data-testid="stDialog"] > div {{
+            padding: 0.8rem !important;
+        }}
+        /* Minimal spacing */
+        .stTextInput, .stButton {{
+            margin-bottom: 0.4rem !important;
+        }}
+        </style>
+        <div style='text-align: center; margin-bottom: 0.5rem;'>
+            {"<img src='data:image/png;base64," + LOGO_BASE64 + "' style='width: 60px; height: 60px; margin: 0 auto 0.5rem; display: block; border-radius: 10px;'>" if LOGO_BASE64 else "<div style='font-size: 2rem; margin-bottom: 0.5rem;'>👑</div>"}
+            <p style='color: #6b7280; font-size: 0.85rem; margin: 0;'>VIP Access</p>
         </div>
-        <div style='
-            background: white;
-            padding: 2rem;
-            border-radius: 0 0 20px 20px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-        '>
         """, unsafe_allow_html=True)
         
-        # Login form
+        # Compact form
         username = st.text_input("Username", placeholder="Username", key="vip_user_popup", label_visibility="collapsed")
         password = st.text_input("Password", type="password", placeholder="Password", key="vip_pass_popup", label_visibility="collapsed")
         
         # Demo hint
-        st.info("💡 **Demo:** demo / demo123")
+        st.caption("💡 **demo** / **demo123**")
         
-        # Buttons
-        col_a, col_b = st.columns(2)
-        with col_a:
-            if st.button("🔓 Log In", type="primary", use_container_width=True, key="vip_login_submit"):
-                if username and password:
-                    if verify_vip_login(username, password):
-                        st.session_state.vip_logged_in = True
-                        st.session_state.is_vip = True
-                        st.session_state.vip_username = username
-                        st.session_state.show_vip_login = False
-                        st.success(f"✅ Welcome, {username}!")
-                        st.balloons()
-                        st.rerun()
-                    else:
-                        st.error("❌ Invalid credentials")
+        # Login button
+        if st.button("🔓 Log In", type="primary", use_container_width=True, key="vip_login_submit"):
+            if username and password:
+                if verify_vip_login(username, password):
+                    st.session_state.vip_logged_in = True
+                    st.session_state.is_vip = True
+                    st.session_state.vip_username = username
+                    st.session_state.show_vip_login = False
+                    st.success(f"✅ Welcome!")
+                    st.balloons()
+                    st.rerun()
                 else:
-                    st.warning("⚠️ Enter credentials")
-        with col_b:
-            if st.button("Cancel", use_container_width=True, key="vip_login_cancel"):
-                st.session_state.show_vip_login = False
-                st.rerun()
+                    st.error("❌ Invalid")
+            else:
+                st.warning("⚠️ Required")
+        
+        # Cancel button
+        if st.button("Cancel", use_container_width=True, key="vip_login_cancel"):
+            st.session_state.show_vip_login = False
+            st.rerun()
         
         # Footer
-        st.caption("📞 **+855 888 836 588** | 💬 **@chhanycls**")
-        
-        st.markdown("</div>", unsafe_allow_html=True)
+        st.caption("📞 +855 888 836 588")
     
-    st.markdown("<br><br>", unsafe_allow_html=True)
-    st.markdown("---")
+    # Show the dialog
+    vip_login_dialog()
 
 # ==================== DASHBOARD ====================
 if page == t('nav_dashboard'):
