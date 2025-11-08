@@ -1453,51 +1453,31 @@ with lang_col2:
 
 # VIP Login Popup Modal (Global - works on any page) - Telegram Style
 if st.session_state.show_vip_login:
-    # Full page overlay with blur effect (Telegram style)
+    # Apply gradient background to entire page
     st.markdown("""
     <style>
-    /* Telegram-style overlay */
-    .telegram-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: linear-gradient(135deg, rgba(102, 126, 234, 0.95) 0%, rgba(118, 75, 162, 0.95) 100%);
-        backdrop-filter: blur(20px);
-        z-index: 999999;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        animation: fadeIn 0.3s ease;
-    }
-    @keyframes fadeIn {
-        from { opacity: 0; }
-        to { opacity: 1; }
-    }
-    /* Hide main content when modal is open */
-    .main > div:first-child {
-        filter: blur(5px);
+    /* Full page gradient background */
+    .stApp {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
     }
     </style>
-    <div class="telegram-overlay"></div>
     """, unsafe_allow_html=True)
     
     # Centered login card (Telegram style)
+    st.markdown("<div style='min-height: 100vh; display: flex; align-items: center; justify-content: center;'>", unsafe_allow_html=True)
+    
     col_left, col_center, col_right = st.columns([1, 2, 1])
     with col_center:
-        st.markdown("<div style='margin-top: 10vh;'></div>", unsafe_allow_html=True)
-        
         # Login card with Telegram design
         st.markdown("""
         <div style='
             background: white;
             border-radius: 16px;
-            padding: 3rem 2.5rem;
+            padding: 3rem 2.5rem 2rem 2.5rem;
             box-shadow: 0 8px 40px rgba(0,0,0,0.25);
             text-align: center;
             max-width: 400px;
-            margin: 0 auto;
+            margin: 2rem auto;
         '>
             <div style='
                 width: 80px;
@@ -1510,7 +1490,7 @@ if st.session_state.show_vip_login:
                 justify-content: center;
                 box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
             '>
-                <span style='font-size: 2.5rem; color: white;'>👑</span>
+                <span style='font-size: 2.5rem;'>👑</span>
             </div>
             <h1 style='
                 color: #1a1a1a;
@@ -1545,20 +1525,7 @@ if st.session_state.show_vip_login:
         )
         
         # Demo credentials hint
-        st.markdown("""
-        <div style='
-            background: rgba(255,255,255,0.2);
-            border: 1px solid rgba(255,255,255,0.3);
-            border-radius: 12px;
-            padding: 0.75rem 1rem;
-            margin: 1rem 0;
-            text-align: center;
-        '>
-            <span style='color: white; font-size: 0.9rem;'>
-                💡 <strong>Demo:</strong> demo / demo123
-            </span>
-        </div>
-        """, unsafe_allow_html=True)
+        st.info("💡 **Demo:** demo / demo123")
         
         # Login button (Telegram style - full width primary)
         if st.button("Log In", type="primary", use_container_width=True, key="vip_login_submit"):
@@ -1585,21 +1552,21 @@ if st.session_state.show_vip_login:
         st.markdown("""
         <div style='
             text-align: center;
-            margin-top: 2rem;
+            margin-top: 1.5rem;
             padding: 1rem;
-            background: rgba(255,255,255,0.15);
+            background: rgba(255,255,255,0.9);
             border-radius: 12px;
-            border: 1px solid rgba(255,255,255,0.2);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         '>
-            <p style='color: white; margin: 0; font-size: 0.9rem;'>
+            <p style='color: #667eea; margin: 0; font-size: 0.9rem;'>
                 <strong>Need VIP Access?</strong><br>
-                📞 +855 888 836 588<br>
-                💬 @chhanycls
+                <span style='color: #1a1a1a;'>📞 +855 888 836 588<br>
+                💬 @chhanycls</span>
             </p>
         </div>
         """, unsafe_allow_html=True)
-        
-        st.markdown("<div style='margin-bottom: 5vh;'></div>", unsafe_allow_html=True)
+    
+    st.markdown("</div>", unsafe_allow_html=True)
 
 # ==================== DASHBOARD ====================
 if page == t('nav_dashboard'):
