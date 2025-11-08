@@ -1250,10 +1250,12 @@ with lang_col2:
         st.session_state.language = 'kh'
         st.rerun()
 
-# VIP Login Popup Dialog (Global - works on any page)
+# VIP Login Popup (Global - works on any page)
 if st.session_state.show_vip_login:
-    @st.dialog("👑 VIP Login")
-    def vip_login_popup():
+    # Create a modal-like container
+    st.markdown("---")
+    with st.container():
+        st.markdown("### 👑 VIP Login")
         st.markdown("**Access Premium Features**")
         
         username = st.text_input("👤 Username", placeholder="Enter your username", key="vip_user_popup")
@@ -1280,8 +1282,7 @@ if st.session_state.show_vip_login:
                 st.rerun()
         
         st.info("📞 Contact: **+855888836588** or **@chhanycls**")
-    
-    vip_login_popup()
+    st.markdown("---")
 
 # ==================== DASHBOARD ====================
 if page == t('nav_dashboard'):
