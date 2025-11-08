@@ -78,15 +78,38 @@ st.markdown("""
         display: none !important;
     }
     
-    /* Remove top padding caused by hidden header */
+    /* Remove ALL top padding and blank space */
     .main > div {
-        padding-top: 1rem;
+        padding-top: 0 !important;
+    }
+    
+    .block-container {
+        padding-top: 0.5rem !important;
+        padding-bottom: 1rem !important;
     }
     
     /* Smooth Page Transitions */
     .main {
-        padding: 1rem 2rem;
+        padding: 0 2rem 1rem 2rem !important;
         animation: fadeIn 0.4s ease-in;
+    }
+    
+    /* Fix Sidebar - Remove top blank space */
+    section[data-testid="stSidebar"] > div {
+        padding-top: 0.5rem !important;
+    }
+    
+    section[data-testid="stSidebar"] .block-container {
+        padding-top: 0 !important;
+    }
+    
+    /* Compact sidebar elements */
+    section[data-testid="stSidebar"] .stButton {
+        margin-bottom: 0.3rem !important;
+    }
+    
+    section[data-testid="stSidebar"] .stRadio {
+        margin-top: 0 !important;
     }
     
     @keyframes fadeIn {
@@ -1367,29 +1390,29 @@ def t(key):
     return TRANSLATIONS[st.session_state.language].get(key, key)
 
 # ==================== SIDEBAR - ONE PAGE DESIGN ====================
-# Compact Sidebar Header with Logo (No Background)
+# Ultra Compact Sidebar Header with Logo
 if LOGO_BASE64:
-    logo_html = f'<img src="data:image/png;base64,{LOGO_BASE64}" style="max-width: 120px; width: 100%; height: auto;">'
+    logo_html = f'<img src="data:image/png;base64,{LOGO_BASE64}" style="max-width: 80px; width: 100%; height: auto;">'
 else:
-    logo_html = '<div style="font-size: 1.8rem;"></div>'
+    logo_html = '<div style="font-size: 1.5rem;"></div>'
 
 st.sidebar.markdown(f"""
-<div style='text-align: center; padding: 0.3rem 0; margin-bottom: 0.3rem;'>
+<div style='text-align: center; padding: 0; margin: 0 0 0.5rem 0;'>
     {logo_html}
-    <div style='color: #667eea; font-size: 1rem; font-weight: 800; margin-top: 0.2rem;'>KHSolar</div>
+    <div style='color: #667eea; font-size: 0.9rem; font-weight: 700; margin-top: 0.3rem;'>KHSolar</div>
 </div>
 """, unsafe_allow_html=True)
 
-# VIP Status Display (Compact)
+# VIP Status Display (Ultra Compact)
 if st.session_state.vip_logged_in:
-    st.sidebar.markdown(f"<div style='text-align: center; padding: 0.3rem; background: #f0fdf4; border-radius: 5px; margin-bottom: 0.5rem;'><span style='color: #15803d; font-weight: 600; font-size: 0.85rem;'>👑 {st.session_state.vip_username}</span></div>", unsafe_allow_html=True)
+    st.sidebar.markdown(f"<div style='text-align: center; padding: 0.2rem; background: #f0fdf4; border-radius: 5px; margin-bottom: 0.3rem;'><span style='color: #15803d; font-weight: 600; font-size: 0.8rem;'>👑 {st.session_state.vip_username}</span></div>", unsafe_allow_html=True)
     if st.sidebar.button("🚪 Logout", use_container_width=True, key="logout_btn"):
         st.session_state.vip_logged_in = False
         st.session_state.is_vip = False
         st.session_state.vip_username = ''
         st.rerun()
 elif st.session_state.is_vip:
-    st.sidebar.markdown("<div style='text-align: center; padding: 0.3rem; background: #f0fdf4; border-radius: 5px; margin-bottom: 0.5rem;'><span style='color: #15803d; font-weight: 600; font-size: 0.85rem;'>👑 VIP</span></div>", unsafe_allow_html=True)
+    st.sidebar.markdown("<div style='text-align: center; padding: 0.2rem; background: #f0fdf4; border-radius: 5px; margin-bottom: 0.3rem;'><span style='color: #15803d; font-weight: 600; font-size: 0.8rem;'>👑 VIP</span></div>", unsafe_allow_html=True)
 else:
     if st.sidebar.button("👑 VIP Login", use_container_width=True, type="primary", key="vip_login_btn"):
         st.session_state.show_vip_login = True
