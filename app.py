@@ -1453,11 +1453,10 @@ with lang_col2:
 
 # VIP Login Popup Modal (Global - works on any page)
 if st.session_state.show_vip_login:
-    # Enhanced modal overlay with premium design
+    # Simplified modal with better Streamlit widget compatibility
     st.markdown("""
     <style>
-    /* Modal Overlay with blur effect */
-    .modal-overlay {
+    .vip-login-container {
         position: fixed;
         top: 0;
         left: 0;
@@ -1465,271 +1464,140 @@ if st.session_state.show_vip_login:
         height: 100%;
         background: rgba(0, 0, 0, 0.75);
         backdrop-filter: blur(8px);
-        z-index: 9998;
-        animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-    
-    /* Premium Modal Content */
-    .vip-modal {
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
-        padding: 0;
-        border-radius: 20px;
-        box-shadow: 0 25px 80px rgba(102, 126, 234, 0.4), 0 0 0 1px rgba(102, 126, 234, 0.1);
-        z-index: 9999;
-        max-width: 480px;
-        width: 92%;
-        animation: modalSlide 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
-        overflow: hidden;
-    }
-    
-    /* Modal Header with gradient */
-    .vip-modal-header {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        padding: 2rem 2rem 1.5rem 2rem;
-        text-align: center;
-        position: relative;
-        overflow: hidden;
-    }
-    
-    .vip-modal-header::before {
-        content: '';
-        position: absolute;
-        top: -50%;
-        left: -50%;
-        width: 200%;
-        height: 200%;
-        background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
-        animation: shimmer 3s infinite;
-    }
-    
-    .vip-modal-title {
-        color: white;
-        font-size: 1.8rem;
-        font-weight: 800;
-        margin: 0;
-        text-shadow: 0 2px 10px rgba(0,0,0,0.2);
-        position: relative;
-        z-index: 1;
-    }
-    
-    .vip-modal-subtitle {
-        color: rgba(255,255,255,0.95);
-        font-size: 0.95rem;
-        margin-top: 0.5rem;
-        font-weight: 500;
-        position: relative;
-        z-index: 1;
-    }
-    
-    /* Modal Body */
-    .vip-modal-body {
-        padding: 2rem;
-    }
-    
-    /* Close button */
-    .modal-close {
-        position: absolute;
-        top: 1rem;
-        right: 1rem;
-        width: 32px;
-        height: 32px;
-        border-radius: 50%;
-        background: rgba(255,255,255,0.2);
-        border: none;
-        color: white;
-        font-size: 1.2rem;
-        cursor: pointer;
+        z-index: 999999;
         display: flex;
         align-items: center;
         justify-content: center;
-        transition: all 0.3s;
-        z-index: 2;
+        animation: fadeIn 0.3s ease;
     }
-    
-    .modal-close:hover {
-        background: rgba(255,255,255,0.3);
-        transform: rotate(90deg);
-    }
-    
-    /* Animations */
     @keyframes fadeIn {
         from { opacity: 0; }
         to { opacity: 1; }
     }
-    
-    @keyframes modalSlide {
-        from { 
-            opacity: 0;
-            transform: translate(-50%, -55%) scale(0.9);
-        }
-        to { 
-            opacity: 1;
-            transform: translate(-50%, -50%) scale(1);
-        }
-    }
-    
-    @keyframes shimmer {
-        0%, 100% { transform: translate(-50%, -50%) rotate(0deg); }
-        50% { transform: translate(-50%, -50%) rotate(180deg); }
-    }
-    
-    /* Feature badges */
-    .feature-badge {
-        display: inline-block;
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        padding: 0.4rem 1rem;
-        border-radius: 20px;
-        font-size: 0.75rem;
-        font-weight: 600;
-        margin: 0.25rem;
-        box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
-    }
-    
-    .benefits-grid {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 0.75rem;
-        margin: 1rem 0;
-    }
-    
-    .benefit-item {
-        background: #f8f9fa;
-        padding: 0.75rem;
-        border-radius: 10px;
-        text-align: center;
-        border: 1px solid #e9ecef;
-        transition: all 0.3s;
-    }
-    
-    .benefit-item:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
-        border-color: #667eea;
-    }
-    
-    .benefit-icon {
-        font-size: 1.5rem;
-        margin-bottom: 0.25rem;
-    }
-    
-    .benefit-text {
-        font-size: 0.8rem;
-        color: #495057;
-        font-weight: 600;
-    }
     </style>
-    <div class="modal-overlay"></div>
-    <div class="vip-modal">
-        <div class="vip-modal-header">
-            <div class="vip-modal-title">👑 VIP Access</div>
-            <div class="vip-modal-subtitle">Unlock Premium Solar Planning Features</div>
-        </div>
+    <div class="vip-login-container"></div>
     """, unsafe_allow_html=True)
     
-    # Modal body content
-    st.markdown('<div class="vip-modal-body">', unsafe_allow_html=True)
-    
-    # VIP Benefits showcase
-    st.markdown("""
-    <div class="benefits-grid">
-        <div class="benefit-item">
-            <div class="benefit-icon">⚡</div>
-            <div class="benefit-text">Advanced Simulation</div>
+    # Create centered container for modal content
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:
+        # Modal header
+        st.markdown("""
+        <div style='
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 1.5rem;
+            border-radius: 15px 15px 0 0;
+            text-align: center;
+            margin-top: 10vh;
+        '>
+            <h2 style='color: white; margin: 0; font-size: 1.8rem;'>👑 VIP Access</h2>
+            <p style='color: rgba(255,255,255,0.95); margin: 0.5rem 0 0 0; font-size: 0.95rem;'>Unlock Premium Solar Planning Features</p>
         </div>
-        <div class="benefit-item">
-            <div class="benefit-icon">📊</div>
-            <div class="benefit-text">Detailed Reports</div>
-        </div>
-        <div class="benefit-item">
-            <div class="benefit-icon">🛠️</div>
-            <div class="benefit-text">Technician Tools</div>
-        </div>
-        <div class="benefit-item">
-            <div class="benefit-icon">💾</div>
-            <div class="benefit-text">Export Options</div>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    st.markdown("<br>", unsafe_allow_html=True)
-    
-    # Login form
-    username = st.text_input(
-        "👤 Username", 
-        placeholder="Enter your username", 
-        key="vip_user_popup",
-        help="Enter your VIP username"
-    )
-    password = st.text_input(
-        "🔒 Password", 
-        type="password", 
-        placeholder="Enter your password", 
-        key="vip_pass_popup",
-        help="Enter your VIP password"
-    )
-    
-    # Demo credentials - Always visible
-    st.markdown("""
-    <div style='background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%); padding: 0.75rem 1rem; border-radius: 10px; border-left: 4px solid #f59e0b; margin-bottom: 1rem;'>
-        <div style='display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;'>
-            <span style='font-size: 1.2rem;'>🎯</span>
-            <strong style='color: #92400e; font-size: 0.9rem;'>Demo Credentials</strong>
-        </div>
-        <div style='background: white; padding: 0.6rem; border-radius: 6px; font-family: monospace;'>
-            <div style='color: #1e40af; font-size: 0.85rem; margin-bottom: 0.3rem;'>
-                <strong>Username:</strong> <code style='background: #dbeafe; padding: 0.2rem 0.5rem; border-radius: 4px;'>demo</code>
+        """, unsafe_allow_html=True)
+        
+        # Modal body with white background
+        st.markdown("""
+        <div style='
+            background: white;
+            padding: 1.5rem;
+            border-radius: 0 0 15px 15px;
+            box-shadow: 0 25px 80px rgba(0,0,0,0.3);
+        '>
+        """, unsafe_allow_html=True)
+        
+        # VIP Benefits showcase
+        st.markdown("""
+        <div style='display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin: 1rem 0;'>
+            <div style='background: #f8f9fa; padding: 0.75rem; border-radius: 10px; text-align: center; border: 1px solid #e9ecef;'>
+                <div style='font-size: 1.5rem; margin-bottom: 0.25rem;'>⚡</div>
+                <div style='font-size: 0.8rem; color: #495057; font-weight: 600;'>Advanced Simulation</div>
             </div>
-            <div style='color: #1e40af; font-size: 0.85rem;'>
-                <strong>Password:</strong> <code style='background: #dbeafe; padding: 0.2rem 0.5rem; border-radius: 4px;'>demo123</code>
+            <div style='background: #f8f9fa; padding: 0.75rem; border-radius: 10px; text-align: center; border: 1px solid #e9ecef;'>
+                <div style='font-size: 1.5rem; margin-bottom: 0.25rem;'>📊</div>
+                <div style='font-size: 0.8rem; color: #495057; font-weight: 600;'>Detailed Reports</div>
+            </div>
+            <div style='background: #f8f9fa; padding: 0.75rem; border-radius: 10px; text-align: center; border: 1px solid #e9ecef;'>
+                <div style='font-size: 1.5rem; margin-bottom: 0.25rem;'>🛠️</div>
+                <div style='font-size: 0.8rem; color: #495057; font-weight: 600;'>Technician Tools</div>
+            </div>
+            <div style='background: #f8f9fa; padding: 0.75rem; border-radius: 10px; text-align: center; border: 1px solid #e9ecef;'>
+                <div style='font-size: 1.5rem; margin-bottom: 0.25rem;'>💾</div>
+                <div style='font-size: 0.8rem; color: #495057; font-weight: 600;'>Export Options</div>
             </div>
         </div>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    st.markdown("<br>", unsafe_allow_html=True)
-    
-    # Action buttons
-    col_a, col_b = st.columns([2, 1])
-    with col_a:
-        if st.button("🔓 Login to VIP", type="primary", use_container_width=True):
-            if username and password:
-                if verify_vip_login(username, password):
-                    st.session_state.vip_logged_in = True
-                    st.session_state.is_vip = True
-                    st.session_state.vip_username = username
-                    st.session_state.show_vip_login = False
-                    st.success(f"✅ Welcome back, {username}!")
-                    st.balloons()
-                    st.rerun()
+        """, unsafe_allow_html=True)
+        
+        st.markdown("<br>", unsafe_allow_html=True)
+        
+        # Login form
+        username = st.text_input(
+            "👤 Username", 
+            placeholder="Enter your username", 
+            key="vip_user_popup",
+            help="Enter your VIP username"
+        )
+        password = st.text_input(
+            "🔒 Password", 
+            type="password", 
+            placeholder="Enter your password", 
+            key="vip_pass_popup",
+            help="Enter your VIP password"
+        )
+        
+        # Demo credentials - Always visible
+        st.markdown("""
+        <div style='background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%); padding: 0.75rem 1rem; border-radius: 10px; border-left: 4px solid #f59e0b; margin: 1rem 0;'>
+            <div style='display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;'>
+                <span style='font-size: 1.2rem;'>🎯</span>
+                <strong style='color: #92400e; font-size: 0.9rem;'>Demo Credentials</strong>
+            </div>
+            <div style='background: white; padding: 0.6rem; border-radius: 6px; font-family: monospace;'>
+                <div style='color: #1e40af; font-size: 0.85rem; margin-bottom: 0.3rem;'>
+                    <strong>Username:</strong> <code style='background: #dbeafe; padding: 0.2rem 0.5rem; border-radius: 4px;'>demo</code>
+                </div>
+                <div style='color: #1e40af; font-size: 0.85rem;'>
+                    <strong>Password:</strong> <code style='background: #dbeafe; padding: 0.2rem 0.5rem; border-radius: 4px;'>demo123</code>
+                </div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # Action buttons
+        col_a, col_b = st.columns([2, 1])
+        with col_a:
+            if st.button("🔓 Login to VIP", type="primary", use_container_width=True, key="vip_login_submit"):
+                if username and password:
+                    if verify_vip_login(username, password):
+                        st.session_state.vip_logged_in = True
+                        st.session_state.is_vip = True
+                        st.session_state.vip_username = username
+                        st.session_state.show_vip_login = False
+                        st.success(f"✅ Welcome back, {username}!")
+                        st.balloons()
+                        st.rerun()
+                    else:
+                        st.error("❌ Invalid credentials. Please try again.")
                 else:
-                    st.error("❌ Invalid credentials. Please try again.")
-            else:
-                st.warning("⚠️ Please enter both username and password")
-    with col_b:
-        if st.button("Cancel", use_container_width=True):
-            st.session_state.show_vip_login = False
-            st.rerun()
-    
-    # Contact info
-    st.markdown("<hr style='margin: 1.5rem 0; border: none; border-top: 1px solid #e9ecef;'>", unsafe_allow_html=True)
-    st.markdown("""
-    <div style='text-align: center; padding: 0.5rem; background: #f8f9fa; border-radius: 8px;'>
-        <div style='font-size: 0.85rem; color: #6c757d; margin-bottom: 0.5rem;'>
-            <strong>Need VIP Access?</strong>
+                    st.warning("⚠️ Please enter both username and password")
+        with col_b:
+            if st.button("Cancel", use_container_width=True, key="vip_login_cancel"):
+                st.session_state.show_vip_login = False
+                st.rerun()
+        
+        # Contact info
+        st.markdown("<hr style='margin: 1rem 0; border: none; border-top: 1px solid #e9ecef;'>", unsafe_allow_html=True)
+        st.markdown("""
+        <div style='text-align: center; padding: 0.5rem; background: #f8f9fa; border-radius: 8px; margin-bottom: 1rem;'>
+            <div style='font-size: 0.85rem; color: #6c757d; margin-bottom: 0.5rem;'>
+                <strong>Need VIP Access?</strong>
+            </div>
+            <div style='font-size: 0.9rem;'>
+                📞 <strong>+855 888 836 588</strong> | 
+                💬 <strong>@chhanycls</strong>
+            </div>
         </div>
-        <div style='font-size: 0.9rem;'>
-            📞 <strong>+855 888 836 588</strong> | 
-            💬 <strong>@chhanycls</strong>
         </div>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    st.markdown('</div></div>', unsafe_allow_html=True)
+        """, unsafe_allow_html=True)
 
 # ==================== DASHBOARD ====================
 if page == t('nav_dashboard'):
