@@ -253,6 +253,173 @@ st.markdown("""
         animation: slideIn 0.3s ease;
     }
     
+    /* ========== MOBILE RESPONSIVE DESIGN ========== */
+    
+    /* Mobile: Phones (up to 768px) */
+    @media (max-width: 768px) {
+        /* Reduce main padding on mobile */
+        .main {
+            padding: 0.5rem 1rem !important;
+        }
+        
+        /* Smaller headers on mobile */
+        h1 {
+            font-size: 1.8rem !important;
+            margin-bottom: 1rem !important;
+        }
+        
+        h2 {
+            font-size: 1.4rem !important;
+            margin-top: 1rem !important;
+        }
+        
+        h3 {
+            font-size: 1.2rem !important;
+        }
+        
+        /* Adjust metric cards for mobile */
+        .stMetric {
+            padding: 15px !important;
+            margin-bottom: 0.5rem !important;
+        }
+        
+        .stMetric [data-testid="stMetricValue"] {
+            font-size: 1.5rem !important;
+        }
+        
+        /* Buttons full width on mobile */
+        .stButton>button {
+            width: 100%;
+            padding: 0.75rem 1rem !important;
+            font-size: 0.95rem !important;
+        }
+        
+        /* Input fields */
+        .stTextInput>div>div>input,
+        .stNumberInput>div>div>input {
+            font-size: 16px !important; /* Prevents zoom on iOS */
+        }
+        
+        /* Sidebar adjustments */
+        [data-testid="stSidebar"] {
+            width: 280px !important;
+        }
+        
+        /* Columns stack on mobile */
+        .row-widget.stHorizontal {
+            flex-direction: column !important;
+        }
+        
+        /* Tabs */
+        .stTabs [data-baseweb="tab"] {
+            padding: 8px 12px !important;
+            font-size: 0.9rem !important;
+        }
+        
+        /* Modal adjustments for mobile */
+        .vip-modal {
+            width: 95% !important;
+            max-width: 95% !important;
+            padding: 0 !important;
+        }
+        
+        .vip-modal-header {
+            padding: 1.5rem 1rem 1rem 1rem !important;
+        }
+        
+        .vip-modal-title {
+            font-size: 1.5rem !important;
+        }
+        
+        .vip-modal-subtitle {
+            font-size: 0.85rem !important;
+        }
+        
+        .vip-modal-body {
+            padding: 1rem !important;
+        }
+        
+        .benefits-grid {
+            grid-template-columns: 1fr 1fr !important;
+            gap: 0.5rem !important;
+        }
+        
+        .benefit-item {
+            padding: 0.5rem !important;
+        }
+        
+        .benefit-icon {
+            font-size: 1.2rem !important;
+        }
+        
+        .benefit-text {
+            font-size: 0.7rem !important;
+        }
+        
+        /* Expander */
+        .streamlit-expanderHeader {
+            font-size: 0.9rem !important;
+        }
+        
+        /* Data tables */
+        .stDataFrame {
+            font-size: 0.85rem !important;
+        }
+        
+        /* Charts - make responsive */
+        .js-plotly-plot {
+            width: 100% !important;
+        }
+    }
+    
+    /* Tablet: 769px to 1024px */
+    @media (min-width: 769px) and (max-width: 1024px) {
+        .main {
+            padding: 1rem 1.5rem !important;
+        }
+        
+        h1 {
+            font-size: 2rem !important;
+        }
+        
+        .vip-modal {
+            width: 85% !important;
+        }
+    }
+    
+    /* Touch device improvements */
+    @media (hover: none) and (pointer: coarse) {
+        /* Larger touch targets */
+        .stButton>button {
+            min-height: 44px !important;
+            padding: 0.75rem 1.5rem !important;
+        }
+        
+        /* Remove hover effects on touch devices */
+        .stButton button:hover,
+        .stMetric:hover,
+        .benefit-item:hover {
+            transform: none !important;
+        }
+        
+        /* Better spacing for touch */
+        .stRadio > div {
+            gap: 1rem !important;
+        }
+    }
+    
+    /* Landscape mobile */
+    @media (max-width: 768px) and (orientation: landscape) {
+        .main {
+            padding: 0.5rem !important;
+        }
+        
+        h1 {
+            font-size: 1.5rem !important;
+            margin-bottom: 0.5rem !important;
+        }
+    }
+    
     @keyframes slideIn {
         from {
             opacity: 0;
