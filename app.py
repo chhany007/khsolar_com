@@ -1307,6 +1307,11 @@ def add_vip_user(phone, telegram='', name='', email='', expires_at=None):
 # VIP Login Functions
 def verify_vip_login(username, password):
     """Verify VIP login credentials"""
+    # Check demo credentials first
+    if username == "demo" and password == "demo123":
+        return True
+    
+    # Then check database for other users
     import hashlib
     try:
         conn = sqlite3.connect('admin_users.db')
