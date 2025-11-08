@@ -1307,8 +1307,13 @@ def add_vip_user(phone, telegram='', name='', email='', expires_at=None):
 # VIP Login Functions
 def verify_vip_login(username, password):
     """Verify VIP login credentials"""
-    # Check demo credentials first
-    if username == "demo" and password == "demo123":
+    # Check VIP user credentials
+    vip_users = {
+        "chhany": "chhany@#$088",
+        "sothea": "sothea@#$234"
+    }
+    
+    if username in vip_users and password == vip_users[username]:
         return True
     
     # Then check database for other users
@@ -1456,53 +1461,62 @@ with lang_col2:
         st.session_state.language = 'kh'
         st.rerun()
 
-# VIP Login Popup Modal (Global - works on any page) - ADMIN STYLE
+# VIP Login Popup Modal (Global - works on any page) - CLEAN DESIGN
 if st.session_state.show_vip_login:
-    # Using same design as Admin Pricing Control
-    @st.dialog("👑 VIP Authentication")
+    # Clean professional login dialog
+    @st.dialog("VIP Login")
     def vip_login_dialog():
-        st.markdown("**Enter credentials to access premium features**")
-        
-        # Logo display
+        # Logo display - centered and prominent
         if LOGO_BASE64:
             st.markdown(f"""
-            <div style='text-align: center; margin-bottom: 1rem;'>
-                <img src='data:image/png;base64,{LOGO_BASE64}' style='width: 80px; height: 80px; margin: 0 auto; display: block; border-radius: 10px;'>
+            <div style='text-align: center; margin-bottom: 1.5rem;'>
+                <img src='data:image/png;base64,{LOGO_BASE64}' style='width: 100px; height: 100px; margin: 0 auto; display: block; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);'>
+                <h3 style='margin: 1rem 0 0 0; color: #667eea; font-weight: 700;'>VIP Access</h3>
+            </div>
+            """, unsafe_allow_html=True)
+        else:
+            st.markdown("""
+            <div style='text-align: center; margin-bottom: 1.5rem;'>
+                <h3 style='margin: 0; color: #667eea; font-weight: 700;'>VIP Access</h3>
             </div>
             """, unsafe_allow_html=True)
         
-        # Input fields
-        username = st.text_input("Username", placeholder="Username", key="vip_user_popup", label_visibility="collapsed")
-        password = st.text_input("🔑 Password", type="password", placeholder="Password", key="vip_pass_popup", label_visibility="collapsed")
-        
-        # Demo credentials hint
-        st.info("💡 **Demo credentials:** demo / demo123")
+        # Input fields with modern styling
+        username = st.text_input("Username", placeholder="Enter username", key="vip_user_popup")
+        password = st.text_input("Password", type="password", placeholder="Enter password", key="vip_pass_popup")
         
         # Buttons
         col1, col2 = st.columns(2)
         with col1:
-            if st.button("🔓 Unlock VIP", use_container_width=True, type="primary"):
+            if st.button("🔓 Login", use_container_width=True, type="primary"):
                 if username and password:
                     if verify_vip_login(username, password):
                         st.session_state.vip_logged_in = True
                         st.session_state.is_vip = True
                         st.session_state.vip_username = username
                         st.session_state.show_vip_login = False
-                        st.success("✅ Access granted!")
+                        st.success("✅ Welcome back!")
                         st.balloons()
                         st.rerun()
                     else:
-                        st.error("❌ Incorrect credentials")
+                        st.error("❌ Invalid credentials")
                 else:
-                    st.warning("⚠️ Please enter credentials")
+                    st.warning("⚠️ Please enter both fields")
         with col2:
             if st.button("Cancel", use_container_width=True):
                 st.session_state.show_vip_login = False
                 st.rerun()
         
-        # Footer
+        # Footer with contact
         st.markdown("---")
-        st.caption("📞 +855 888 836 588 | 💬 @chhanycls")
+        st.markdown("""
+        <div style='text-align: center; margin-top: 1rem;'>
+            <p style='color: #6b7280; font-size: 0.85rem; margin: 0;'>
+                Need access? Contact us<br>
+                <strong style='color: #667eea;'>📞 +855 888 836 588 | 💬 @chhanycls</strong>
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
     
     # Show the dialog
     vip_login_dialog()
