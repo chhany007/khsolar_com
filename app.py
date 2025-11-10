@@ -1,5 +1,6 @@
 """
 KHSolar - Ultimate Solar Planning & Business Software
+Version: 2.0 - Latest Update
 """
 import streamlit as st
 
