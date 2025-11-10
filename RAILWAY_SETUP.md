@@ -20,7 +20,7 @@ All configuration files are already in place:
 ### **Step 2: Deploy from GitHub**
 1. Click **"New Project"**
 2. Select **"Deploy from GitHub repo"**
-3. Choose repository: **`chhany007/khsolar`**
+3. Choose repository: **`chhany007/khsolar_com`**
 4. Railway will automatically detect it's a Streamlit app
 5. Click **"Deploy Now"**
 
@@ -175,7 +175,7 @@ In Railway dashboard you can see:
 - Railway Dashboard: https://railway.app/dashboard
 - Railway Docs: https://docs.railway.app
 - DNS Checker: https://dnschecker.org
-- Your GitHub Repo: https://github.com/chhany007/khsolar
+- Your GitHub Repo: https://github.com/chhany007/khsolar_com
 
 ---
 

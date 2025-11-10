@@ -18,7 +18,7 @@
 
 2. **Create New App**
    - Click "New app" button
-   - Repository: `chhany007/khsolar`
+   - Repository: `chhany007/khsolar_com`
    - Branch: `main`
    - Main file path: `app.py`
    - Click "Deploy"
@@ -63,7 +63,7 @@ Once deployed, add these DNS records in Namecheap:
 1. Go to https://railway.app
 2. Sign in with GitHub
 3. Click "New Project" → "Deploy from GitHub repo"
-4. Select `chhany007/khsolar`
+4. Select `chhany007/khsolar_com`
 5. Railway auto-detects Streamlit
 6. Get $5 free credit monthly
 
