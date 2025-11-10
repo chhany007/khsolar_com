@@ -1,11 +1,8 @@
-[phases.setup]
-nixPkgs = ["python311"]
+[providers]
+python = "3.11"
 
 [phases.install]
-cmds = ["pip install -r requirements.txt"]
-
-[phases.build]
-cmds = ["echo 'Build complete'"]
+cmds = ["pip install --upgrade pip setuptools wheel", "pip install -r requirements.txt"]
 
 [start]
 cmd = "streamlit run app.py --server.port=$PORT --server.address=0.0.0.0 --server.headless=true"
