@@ -74,8 +74,39 @@ st.markdown("""
         display: none !important;
     }
     
-    /* Hide Streamlit branding */
+    /* Hide ALL Streamlit branding and logos */
     .viewerBadge_container__1QSob {
+        display: none !important;
+    }
+    
+    /* Hide "Made with Streamlit" */
+    footer {
+        visibility: hidden !important;
+        display: none !important;
+    }
+    
+    footer::after {
+        content: '' !important;
+        display: none !important;
+    }
+    
+    /* Hide Streamlit logo in top right */
+    [data-testid="stStatusWidget"] {
+        display: none !important;
+    }
+    
+    /* Hide "Deploy" button */
+    [data-testid="stToolbar"] {
+        display: none !important;
+    }
+    
+    /* Hide any Streamlit watermark */
+    .css-1dp5vir {
+        display: none !important;
+    }
+    
+    /* Remove Streamlit branding from iframe */
+    iframe[title*="streamlit"] {
         display: none !important;
     }
     
