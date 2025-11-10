@@ -262,18 +262,49 @@ class MainWindow(QMainWindow):
         
     def create_dashboard(self):
         """Create dashboard tab with statistics and quick actions"""
+        from PyQt5.QtWidgets import QScrollArea
+        
+        # Main widget
         dashboard = QWidget()
+        main_layout = QVBoxLayout()
+        dashboard.setLayout(main_layout)
+        
+        # Scrollable area
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.NoFrame)
+        
+        # Content widget
+        content = QWidget()
         layout = QVBoxLayout()
-        dashboard.setLayout(layout)
+        content.setLayout(layout)
+        layout.setSpacing(20)
+        layout.setContentsMargins(20, 20, 20, 20)
         
-        # Welcome section
-        welcome = QLabel("Welcome to KHSolar Desktop")
-        welcome.setFont(QFont("Segoe UI", 20, QFont.Bold))
-        welcome.setStyleSheet("color: #667eea; padding: 20px;")
-        layout.addWidget(welcome)
+        # Welcome section with date
+        from datetime import datetime
+        welcome_widget = QWidget()
+        welcome_layout = QHBoxLayout()
+        welcome_widget.setLayout(welcome_layout)
+        welcome_widget.setStyleSheet("""
+            background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #667eea, stop:1 #764ba2);
+            border-radius: 10px;
+            padding: 20px;
+        """)
         
-        # Stats cards
-        stats_layout = QGridLayout()
+        welcome = QLabel("☀️ KHSolar Business Dashboard")
+        welcome.setFont(QFont("Segoe UI", 22, QFont.Bold))
+        welcome.setStyleSheet("color: white;")
+        welcome_layout.addWidget(welcome)
+        
+        welcome_layout.addStretch()
+        
+        date_label = QLabel(datetime.now().strftime("%A, %B %d, %Y"))
+        date_label.setFont(QFont("Segoe UI", 12))
+        date_label.setStyleSheet("color: rgba(255,255,255,0.9);")
+        welcome_layout.addWidget(date_label)
+        
+        layout.addWidget(welcome_widget)
         
         # Get data
         products = self.db.get_all_products()
@@ -284,92 +315,165 @@ class MainWindow(QMainWindow):
         # Calculate totals
         total_sales_value = sum(sale[4] for sale in sales) if sales else 0
         pending_sales = sum(1 for sale in sales if sale[6] == 'Pending') if sales else 0
+        completed_sales = sum(1 for sale in sales if sale[6] == 'Completed') if sales else 0
         
-        # Create stat cards
-        cards = [
-            ("📦 Total Products", str(len(products)), "#3b82f6", "All products in catalog"),
-            ("💰 Total Sales", f"${total_sales_value:,.2f}", "#10b981", "All time revenue"),
-            ("👥 Customers", str(len(customers)), "#f59e0b", "Registered customers"),
-            ("⏳ Pending Orders", str(pending_sales), "#ef4444", "Awaiting processing"),
-            ("🛡️ Active Warranties", str(len(warranties)), "#8b5cf6", "Under warranty"),
-            ("📊 This Month", str(len(sales)), "#06b6d4", "Orders this month")
+        # Stats section label
+        stats_header = QLabel("📊 Business Overview")
+        stats_header.setFont(QFont("Segoe UI", 16, QFont.Bold))
+        stats_header.setStyleSheet("color: #1f2937; margin-top: 10px;")
+        layout.addWidget(stats_header)
+        
+        # Stats cards - Row 1
+        stats_row1 = QHBoxLayout()
+        stats_row1.setSpacing(15)
+        
+        cards_row1 = [
+            ("📦 Total Products", str(len(products)), "#3b82f6", "Items in catalog"),
+            ("💰 Total Revenue", f"${total_sales_value:,.2f}", "#10b981", "All time sales"),
+            ("👥 Customers", str(len(customers)), "#f59e0b", "Registered clients")
         ]
         
-        for idx, (title, value, color, desc) in enumerate(cards):
+        for title, value, color, desc in cards_row1:
             card = self.create_stat_card(title, value, color, desc)
-            row = idx // 3
-            col = idx % 3
-            stats_layout.addWidget(card, row, col)
+            card.setMinimumHeight(140)
+            card.setMinimumWidth(250)
+            stats_row1.addWidget(card)
         
-        layout.addLayout(stats_layout)
+        layout.addLayout(stats_row1)
         
-        # Quick actions
-        actions_label = QLabel("⚡ Quick Actions")
-        actions_label.setFont(QFont("Segoe UI", 16, QFont.Bold))
-        actions_label.setStyleSheet("color: #1f2937; padding: 20px 20px 10px 20px;")
-        layout.addWidget(actions_label)
+        # Stats cards - Row 2
+        stats_row2 = QHBoxLayout()
+        stats_row2.setSpacing(15)
         
-        actions_layout = QHBoxLayout()
+        cards_row2 = [
+            ("⏳ Pending Orders", str(pending_sales), "#ef4444", "Awaiting processing"),
+            ("✅ Completed", str(completed_sales), "#22c55e", "Orders fulfilled"),
+            ("🛡️ Warranties", str(len(warranties)), "#8b5cf6", "Active coverage")
+        ]
         
-        btn_new_sale = QPushButton("➕ New Sale")
-        btn_new_sale.setMinimumHeight(50)
+        for title, value, color, desc in cards_row2:
+            card = self.create_stat_card(title, value, color, desc)
+            card.setMinimumHeight(140)
+            card.setMinimumWidth(250)
+            stats_row2.addWidget(card)
+        
+        layout.addLayout(stats_row2)
+        
+        # Quick actions section
+        actions_header = QLabel("⚡ Quick Actions")
+        actions_header.setFont(QFont("Segoe UI", 16, QFont.Bold))
+        actions_header.setStyleSheet("color: #1f2937; margin-top: 20px;")
+        layout.addWidget(actions_header)
+        
+        # Action buttons in 2 rows
+        actions_row1 = QHBoxLayout()
+        actions_row1.setSpacing(15)
+        
+        btn_new_sale = QPushButton("➕ Create New Sale")
+        btn_new_sale.setMinimumHeight(60)
+        btn_new_sale.setFont(QFont("Segoe UI", 11, QFont.Bold))
         btn_new_sale.clicked.connect(lambda: self.tabs.setCurrentIndex(2))
-        actions_layout.addWidget(btn_new_sale)
+        actions_row1.addWidget(btn_new_sale)
         
         btn_view_products = QPushButton("📦 View Products")
-        btn_view_products.setMinimumHeight(50)
+        btn_view_products.setMinimumHeight(60)
+        btn_view_products.setFont(QFont("Segoe UI", 11, QFont.Bold))
         btn_view_products.clicked.connect(lambda: self.tabs.setCurrentIndex(1))
-        actions_layout.addWidget(btn_view_products)
+        actions_row1.addWidget(btn_view_products)
         
-        btn_customers = QPushButton("👥 Customers")
-        btn_customers.setMinimumHeight(50)
+        layout.addLayout(actions_row1)
+        
+        actions_row2 = QHBoxLayout()
+        actions_row2.setSpacing(15)
+        
+        btn_customers = QPushButton("👥 Manage Customers")
+        btn_customers.setMinimumHeight(60)
+        btn_customers.setFont(QFont("Segoe UI", 11, QFont.Bold))
         btn_customers.clicked.connect(lambda: self.tabs.setCurrentIndex(4))
-        actions_layout.addWidget(btn_customers)
+        actions_row2.addWidget(btn_customers)
         
         btn_sync = QPushButton("🌐 Sync Online Orders")
-        btn_sync.setMinimumHeight(50)
-        btn_sync.setStyleSheet("background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #10b981, stop:1 #059669);")
+        btn_sync.setMinimumHeight(60)
+        btn_sync.setFont(QFont("Segoe UI", 11, QFont.Bold))
+        btn_sync.setStyleSheet("""
+            QPushButton {
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #10b981, stop:1 #059669);
+                color: white;
+                border: none;
+                padding: 10px 20px;
+                border-radius: 6px;
+                font-weight: bold;
+            }
+            QPushButton:hover {
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #059669, stop:1 #047857);
+            }
+        """)
         btn_sync.clicked.connect(lambda: self.tabs.setCurrentIndex(2))
-        actions_layout.addWidget(btn_sync)
+        actions_row2.addWidget(btn_sync)
         
-        layout.addLayout(actions_layout)
+        layout.addLayout(actions_row2)
+        
+        # Add some bottom padding
+        layout.addSpacing(20)
         layout.addStretch()
+        
+        # Set scroll content
+        scroll.setWidget(content)
+        main_layout.addWidget(scroll)
         
         return dashboard
     
     def create_stat_card(self, title, value, color, description):
         """Create a statistics card"""
         card = QFrame()
+        card.setFrameShape(QFrame.StyledPanel)
         card.setStyleSheet(f"""
             QFrame {{
                 background: white;
-                border-left: 4px solid {color};
-                border-radius: 8px;
+                border: 2px solid {color};
+                border-left: 6px solid {color};
+                border-radius: 10px;
                 padding: 20px;
             }}
             QFrame:hover {{
                 background: #f9fafb;
-                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                border: 2px solid {color};
+                border-left: 6px solid {color};
             }}
         """)
         
         card_layout = QVBoxLayout()
         card.setLayout(card_layout)
+        card_layout.setSpacing(8)
         
         # Title
         title_label = QLabel(title)
-        title_label.setStyleSheet("font-size: 14px; color: #6b7280; font-weight: 600;")
+        title_label.setFont(QFont("Segoe UI", 11, QFont.Bold))
+        title_label.setStyleSheet("color: #6b7280;")
+        title_label.setWordWrap(True)
         card_layout.addWidget(title_label)
+        
+        # Spacer
+        card_layout.addSpacing(10)
         
         # Value
         value_label = QLabel(value)
-        value_label.setStyleSheet(f"font-size: 32px; color: {color}; font-weight: bold; margin: 10px 0;")
+        value_label.setFont(QFont("Segoe UI", 28, QFont.Bold))
+        value_label.setStyleSheet(f"color: {color};")
+        value_label.setWordWrap(True)
         card_layout.addWidget(value_label)
+        
+        # Spacer
+        card_layout.addSpacing(5)
         
         # Description
         desc_label = QLabel(description)
-        desc_label.setStyleSheet("font-size: 12px; color: #9ca3af;")
+        desc_label.setFont(QFont("Segoe UI", 10))
+        desc_label.setStyleSheet("color: #9ca3af;")
+        desc_label.setWordWrap(True)
         card_layout.addWidget(desc_label)
+        
+        card_layout.addStretch()
         
         return card
     
