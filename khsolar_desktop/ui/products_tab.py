@@ -2,17 +2,24 @@
 Products & Prices Tab
 """
 
+import sys
+import os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
                              QPushButton, QTableWidget, QTableWidgetItem,
                              QLineEdit, QComboBox, QGroupBox, QFormLayout)
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont
 
+from database.db_manager import DatabaseManager
+
 class ProductsTab(QWidget):
     """Products and pricing management tab"""
     
     def __init__(self):
         super().__init__()
+        self.db = DatabaseManager()
         self.init_ui()
         self.load_products()
         
@@ -35,7 +42,8 @@ class ProductsTab(QWidget):
         search_layout.addWidget(self.search_box)
         
         self.category_filter = QComboBox()
-        self.category_filter.addItems(["All Categories", "Inverters", "Solar Panels", "Batteries", "Accessories"])
+        self.category_filter.addItems(["All Categories", "Inverters", "Solar Panels", "Batteries", 
+                                        "Water Pumps", "Monitoring", "Accessories", "Other"])
         self.category_filter.currentTextChanged.connect(self.filter_products)
         search_layout.addWidget(self.category_filter)
         
@@ -78,17 +86,21 @@ class ProductsTab(QWidget):
         
     def load_products(self):
         """Load products from database"""
-        # Sample product data (will be replaced with database)
-        products = [
-            ("INV-001", "Deye 8KW Hybrid Inverter", "Inverters", "$1,200", "$1,500", "15"),
-            ("INV-002", "Growatt 10KW Inverter", "Inverters", "$1,400", "$1,800", "10"),
-            ("PNL-001", "550W Mono Solar Panel", "Solar Panels", "$120", "$150", "50"),
-            ("PNL-002", "450W Poly Solar Panel", "Solar Panels", "$90", "$120", "30"),
-            ("BAT-001", "5.12KWh LiFePO4 Battery", "Batteries", "$800", "$1,000", "20"),
-            ("BAT-002", "10.24KWh Battery Pack", "Batteries", "$1,500", "$1,900", "12"),
-            ("ACC-001", "MC4 Connectors (Pair)", "Accessories", "$5", "$8", "200"),
-            ("ACC-002", "Solar Cable 6mm (per meter)", "Accessories", "$1.5", "$2.5", "500"),
-        ]
+        # Get products from database
+        db_products = self.db.get_all_products()
+        
+        # Convert to display format
+        products = []
+        for p in db_products:
+            # p = (id, code, name, category, wholesale, retail, stock, desc, specs, image, created, updated)
+            products.append((
+                p[1],  # product_code
+                p[2],  # product_name
+                p[3],  # category
+                f"${p[4]:,.2f}",  # wholesale_price
+                f"${p[5]:,.2f}",  # retail_price
+                str(p[6])  # stock
+            ))
         
         self.table.setRowCount(len(products))
         for row, product in enumerate(products):

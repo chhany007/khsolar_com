@@ -2,17 +2,26 @@
 Sales Management Tab
 """
 
+import sys
+import os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
                              QPushButton, QTableWidget, QTableWidgetItem,
                              QLineEdit, QComboBox, QDateEdit)
 from PyQt5.QtCore import Qt, QDate
-from PyQt5.QtGui import QFont
+from PyQt5.QtGui import QFont, QColor
+
+from database.db_manager import DatabaseManager
+from modules.web_sync import WebSync, create_sample_online_order
 
 class SalesTab(QWidget):
     """Sales management tab"""
     
     def __init__(self):
         super().__init__()
+        self.db = DatabaseManager()
+        self.web_sync = WebSync(self.db)
         self.init_ui()
         self.load_sales()
         
@@ -53,10 +62,10 @@ class SalesTab(QWidget):
         
         # Sales table
         self.table = QTableWidget()
-        self.table.setColumnCount(8)
+        self.table.setColumnCount(9)
         self.table.setHorizontalHeaderLabels([
-            "Invoice #", "Date", "Customer", "Products", "Total Amount",
-            "Payment", "Status", "Actions"
+            "Invoice #", "Date", "Customer", "Source", "Total Amount",
+            "Payment %", "Payment", "Status", "Actions"
         ])
         self.table.horizontalHeader().setStretchLastSection(True)
         self.table.setAlternatingRowColors(True)
@@ -97,6 +106,11 @@ class SalesTab(QWidget):
         
         button_layout.addStretch()
         
+        sync_btn = QPushButton("🌐 Sync Online Orders")
+        sync_btn.clicked.connect(self.sync_online_orders)
+        sync_btn.setStyleSheet("background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #10b981, stop:1 #059669);")
+        button_layout.addWidget(sync_btn)
+        
         export_btn = QPushButton("📤 Export Report")
         export_btn.clicked.connect(self.export_report)
         button_layout.addWidget(export_btn)
@@ -104,34 +118,75 @@ class SalesTab(QWidget):
         layout.addLayout(button_layout)
         
     def load_sales(self):
-        """Load sales data"""
-        # Sample sales data
-        sales = [
-            ("INV-2024-001", "2024-11-01", "Sok Pisey", "2x Inverter, 10x Panel", "$18,500", "50%", "Pending"),
-            ("INV-2024-002", "2024-11-03", "Chan Sophea", "1x Battery Pack", "$1,900", "100%", "Completed"),
-            ("INV-2024-003", "2024-11-05", "Lim Dara", "1x Inverter, 5x Panel", "$8,250", "30%", "Pending"),
-            ("INV-2024-004", "2024-11-07", "Heng Srey", "20x Panel, Accessories", "$10,800", "100%", "Completed"),
-            ("INV-2024-005", "2024-11-09", "Pich Veasna", "Complete System", "$22,000", "20%", "Pending"),
-        ]
+        """Load sales data from database"""
+        # Get sales from database
+        db_sales = self.db.get_all_sales()
         
-        self.table.setRowCount(len(sales))
-        for row, sale in enumerate(sales):
-            for col, value in enumerate(sale):
-                item = QTableWidgetItem(str(value))
-                item.setTextAlignment(Qt.AlignCenter)
-                
-                # Color code status
-                if col == 6:  # Status column
-                    if value == "Completed":
-                        item.setBackground(Qt.green)
-                        item.setForeground(Qt.white)
-                    elif value == "Pending":
-                        item.setBackground(Qt.yellow)
-                    elif value == "Cancelled":
-                        item.setBackground(Qt.red)
-                        item.setForeground(Qt.white)
-                
-                self.table.setItem(row, col, item)
+        self.table.setRowCount(len(db_sales))
+        for row, sale in enumerate(db_sales):
+            # sale = (id, invoice_number, sale_date, customer_name, total_amount, payment_percentage, sale_status, source)
+            
+            # Invoice #
+            item = QTableWidgetItem(sale[1])
+            item.setTextAlignment(Qt.AlignCenter)
+            self.table.setItem(row, 0, item)
+            
+            # Date
+            item = QTableWidgetItem(sale[2])
+            item.setTextAlignment(Qt.AlignCenter)
+            self.table.setItem(row, 1, item)
+            
+            # Customer
+            item = QTableWidgetItem(sale[3])
+            item.setTextAlignment(Qt.AlignCenter)
+            self.table.setItem(row, 2, item)
+            
+            # Source
+            source = sale[7] if len(sale) > 7 else 'Desktop'
+            item = QTableWidgetItem(source)
+            item.setTextAlignment(Qt.AlignCenter)
+            # Highlight online orders
+            if source == 'Website':
+                item.setBackground(QColor("#e0f2fe"))  # Light blue
+                item.setForeground(QColor("#0369a1"))  # Dark blue
+                font = item.font()
+                font.setBold(True)
+                item.setFont(font)
+            self.table.setItem(row, 3, item)
+            
+            # Total Amount
+            item = QTableWidgetItem(f"${sale[4]:,.2f}")
+            item.setTextAlignment(Qt.AlignCenter)
+            self.table.setItem(row, 4, item)
+            
+            # Payment %
+            item = QTableWidgetItem(f"{sale[5]:.0f}%")
+            item.setTextAlignment(Qt.AlignCenter)
+            self.table.setItem(row, 5, item)
+            
+            # Payment Status
+            payment_status = "Paid" if sale[5] >= 100 else "Partial" if sale[5] > 0 else "Pending"
+            item = QTableWidgetItem(payment_status)
+            item.setTextAlignment(Qt.AlignCenter)
+            if payment_status == "Paid":
+                item.setBackground(Qt.green)
+                item.setForeground(Qt.white)
+            elif payment_status == "Partial":
+                item.setBackground(Qt.yellow)
+            self.table.setItem(row, 6, item)
+            
+            # Status
+            item = QTableWidgetItem(sale[6])
+            item.setTextAlignment(Qt.AlignCenter)
+            if sale[6] == "Completed":
+                item.setBackground(Qt.green)
+                item.setForeground(Qt.white)
+            elif sale[6] == "Pending":
+                item.setBackground(Qt.yellow)
+            elif sale[6] == "Cancelled":
+                item.setBackground(Qt.red)
+                item.setForeground(Qt.white)
+            self.table.setItem(row, 7, item)
                 
         # Update summary
         self.update_summary()
@@ -186,6 +241,25 @@ class SalesTab(QWidget):
         else:
             QMessageBox.warning(self, "No Selection", "Please select a sale to generate invoice")
             
+    def sync_online_orders(self):
+        """Sync online orders from website"""
+        from PyQt5.QtWidgets import QMessageBox
+        
+        # For demo, create a sample online order
+        sample_order = create_sample_online_order()
+        success, result, sale_id = self.web_sync.import_online_order(sample_order)
+        
+        if success:
+            QMessageBox.information(self, "Sync Complete", 
+                f"✅ Online order imported successfully!\n\nInvoice: {result}\n\n"
+                f"Customer: {sample_order['customer_name']}\n"
+                f"Total: ${sample_order['total_amount']:,.2f}\n\n"
+                f"Status: Pending (awaiting confirmation)")
+            self.load_sales()  # Refresh table
+            self.update_summary()
+        else:
+            QMessageBox.warning(self, "Sync Error", f"Failed to import order: {result}")
+    
     def export_report(self):
         """Export sales report"""
         from PyQt5.QtWidgets import QMessageBox
