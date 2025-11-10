@@ -78,6 +78,11 @@ class ProductsTab(QWidget):
         
         button_layout.addStretch()
         
+        alerts_btn = QPushButton("🔔 Inventory Alerts")
+        alerts_btn.setStyleSheet("background: qlineargradient(x1:0, y1:0, x2:1, y2:0, stop:0 #f59e0b, stop:1 #d97706);")
+        alerts_btn.clicked.connect(self.show_inventory_alerts)
+        button_layout.addWidget(alerts_btn)
+        
         export_btn = QPushButton("📤 Export to Excel")
         export_btn.clicked.connect(self.export_products)
         button_layout.addWidget(export_btn)
@@ -161,8 +166,63 @@ class ProductsTab(QWidget):
                 self.table.removeRow(selected)
         else:
             QMessageBox.warning(self, "No Selection", "Please select a product to delete")
-            
+    
+    def show_inventory_alerts(self):
+        """Show inventory alerts and low stock warnings"""
+        from ui.inventory_alerts_dialog import InventoryAlertsDialog
+        dialog = InventoryAlertsDialog(self)
+        dialog.exec_()
+    
     def export_products(self):
         """Export products to Excel"""
-        from PyQt5.QtWidgets import QMessageBox
-        QMessageBox.information(self, "Export", "Products exported to Excel successfully!")
+        from PyQt5.QtWidgets import QMessageBox, QFileDialog
+        import pandas as pd
+        
+        try:
+            # Get products
+            db_products = self.db.get_all_products()
+            
+            if not db_products:
+                QMessageBox.warning(self, "No Data", "No products to export")
+                return
+            
+            # Convert to list of dicts
+            products_data = []
+            for p in db_products:
+                products_data.append({
+                    'Product Code': p[1],
+                    'Product Name': p[2],
+                    'Category': p[3],
+                    'Wholesale Price': f"${p[4]:,.2f}",
+                    'Retail Price': f"${p[5]:,.2f}",
+                    'Stock': p[6],
+                    'Description': p[7] if len(p) > 7 else ''
+                })
+            
+            # Create DataFrame
+            df = pd.DataFrame(products_data)
+            
+            # Ask where to save
+            filename, _ = QFileDialog.getSaveFileName(
+                self, "Export Products", 
+                f"Products_{pd.Timestamp.now().strftime('%Y%m%d')}.xlsx",
+                "Excel Files (*.xlsx)"
+            )
+            
+            if filename:
+                # Export to Excel
+                df.to_excel(filename, index=False, engine='openpyxl')
+                
+                result = QMessageBox.question(self, "Export Complete", 
+                    f"✅ Products exported successfully!\n\n"
+                    f"File: {os.path.basename(filename)}\n"
+                    f"Products: {len(products_data)}\n\n"
+                    f"Would you like to open it now?",
+                    QMessageBox.Yes | QMessageBox.No)
+                
+                if result == QMessageBox.Yes:
+                    if os.name == 'nt':  # Windows
+                        os.startfile(filename)
+        
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to export products:\n{str(e)}")

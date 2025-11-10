@@ -14,6 +14,8 @@ from PyQt5.QtGui import QFont, QColor
 
 from database.db_manager import DatabaseManager
 from modules.web_sync import WebSync, create_sample_online_order
+from modules.invoice_generator import InvoiceGenerator
+from modules.reports import ReportGenerator
 
 class SalesTab(QWidget):
     """Sales management tab"""
@@ -22,6 +24,8 @@ class SalesTab(QWidget):
         super().__init__()
         self.db = DatabaseManager()
         self.web_sync = WebSync(self.db)
+        self.invoice_gen = InvoiceGenerator()
+        self.report_gen = ReportGenerator()
         self.init_ui()
         self.load_sales()
         
@@ -235,11 +239,46 @@ class SalesTab(QWidget):
     def generate_invoice(self):
         """Generate invoice PDF"""
         from PyQt5.QtWidgets import QMessageBox
+        import os
+        import subprocess
+        
         selected = self.table.currentRow()
-        if selected >= 0:
-            QMessageBox.information(self, "Invoice", "Invoice PDF generated successfully!")
-        else:
+        if selected < 0:
             QMessageBox.warning(self, "No Selection", "Please select a sale to generate invoice")
+            return
+        
+        try:
+            # Get sale data from table
+            db_sales = self.db.get_all_sales()
+            sale_data = db_sales[selected]
+            sale_id = sale_data[0]
+            
+            # Get sale details with items
+            sale, items = self.db.get_sale_details(sale_id)
+            
+            if not items:
+                QMessageBox.warning(self, "No Items", "This sale has no items to generate invoice")
+                return
+            
+            # Generate PDF
+            filepath = self.invoice_gen.generate_invoice(sale, items)
+            
+            # Show success message
+            result = QMessageBox.question(self, "Invoice Generated", 
+                f"✅ Invoice PDF generated successfully!\n\n"
+                f"File: {os.path.basename(filepath)}\n\n"
+                f"Would you like to open it now?",
+                QMessageBox.Yes | QMessageBox.No)
+            
+            if result == QMessageBox.Yes:
+                # Open PDF with default application
+                if os.name == 'nt':  # Windows
+                    os.startfile(filepath)
+                else:  # Mac/Linux
+                    subprocess.call(['open', filepath])
+        
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to generate invoice:\n{str(e)}")
             
     def sync_online_orders(self):
         """Sync online orders from website"""
@@ -261,6 +300,56 @@ class SalesTab(QWidget):
             QMessageBox.warning(self, "Sync Error", f"Failed to import order: {result}")
     
     def export_report(self):
-        """Export sales report"""
-        from PyQt5.QtWidgets import QMessageBox
-        QMessageBox.information(self, "Export", "Sales report exported successfully!")
+        """Export sales report to Excel"""
+        from PyQt5.QtWidgets import QMessageBox, QFileDialog
+        import pandas as pd
+        
+        try:
+            # Get sales data
+            db_sales = self.db.get_all_sales()
+            
+            if not db_sales:
+                QMessageBox.warning(self, "No Data", "No sales data to export")
+                return
+            
+            # Convert to list of dicts for pandas
+            sales_data = []
+            for sale in db_sales:
+                sales_data.append({
+                    'Invoice #': sale[1],
+                    'Date': sale[2],
+                    'Customer': sale[3],
+                    'Source': sale[7] if len(sale) > 7 else 'Desktop',
+                    'Total Amount': f"${sale[4]:,.2f}",
+                    'Payment %': f"{sale[5]:.0f}%",
+                    'Payment Status': 'Paid' if sale[5] >= 100 else 'Partial' if sale[5] > 0 else 'Pending',
+                    'Status': sale[6]
+                })
+            
+            # Create DataFrame
+            df = pd.DataFrame(sales_data)
+            
+            # Ask where to save
+            filename, _ = QFileDialog.getSaveFileName(
+                self, "Export Sales Report", 
+                f"Sales_Report_{pd.Timestamp.now().strftime('%Y%m%d')}.xlsx",
+                "Excel Files (*.xlsx)"
+            )
+            
+            if filename:
+                # Export to Excel
+                df.to_excel(filename, index=False, engine='openpyxl')
+                
+                result = QMessageBox.question(self, "Export Complete", 
+                    f"✅ Sales report exported successfully!\n\n"
+                    f"File: {os.path.basename(filename)}\n"
+                    f"Records: {len(sales_data)}\n\n"
+                    f"Would you like to open it now?",
+                    QMessageBox.Yes | QMessageBox.No)
+                
+                if result == QMessageBox.Yes:
+                    if os.name == 'nt':  # Windows
+                        os.startfile(filename)
+        
+        except Exception as e:
+            QMessageBox.critical(self, "Error", f"Failed to export report:\n{str(e)}")
