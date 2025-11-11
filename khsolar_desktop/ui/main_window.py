@@ -413,9 +413,51 @@ class MainWindow(QMainWindow):
         
         layout.addLayout(actions_row2)
         
+        # Recent Activity Section
+        activity_header = QLabel("📋 Recent Activity")
+        activity_header.setFont(QFont("Segoe UI", 16, QFont.Bold))
+        activity_header.setStyleSheet("color: #1f2937; margin-top: 20px;")
+        layout.addWidget(activity_header)
+        
+        activity_widget = self.create_recent_activity(sales)
+        layout.addWidget(activity_widget)
+        
+        # Business Insights Section
+        insights_header = QLabel("💡 Business Insights")
+        insights_header.setFont(QFont("Segoe UI", 16, QFont.Bold))
+        insights_header.setStyleSheet("color: #1f2937; margin-top: 20px;")
+        layout.addWidget(insights_header)
+        
+        insights_widget = self.create_business_insights(products, sales, customers)
+        layout.addWidget(insights_widget)
+        
+        # Refresh button at bottom
+        refresh_layout = QHBoxLayout()
+        refresh_layout.addStretch()
+        
+        refresh_btn = QPushButton("🔄 Refresh Dashboard")
+        refresh_btn.setMinimumHeight(40)
+        refresh_btn.setFont(QFont("Segoe UI", 10, QFont.Bold))
+        refresh_btn.setStyleSheet("""
+            QPushButton {
+                background: #667eea;
+                color: white;
+                border: none;
+                padding: 10px 30px;
+                border-radius: 6px;
+            }
+            QPushButton:hover {
+                background: #5568d3;
+            }
+        """)
+        refresh_btn.clicked.connect(self.refresh_dashboard)
+        refresh_layout.addWidget(refresh_btn)
+        
+        refresh_layout.addStretch()
+        layout.addLayout(refresh_layout)
+        
         # Add some bottom padding
-        layout.addSpacing(20)
-        layout.addStretch()
+        layout.addSpacing(30)
         
         # Set scroll content
         scroll.setWidget(content)
@@ -476,6 +518,241 @@ class MainWindow(QMainWindow):
         card_layout.addStretch()
         
         return card
+    
+    def create_recent_activity(self, sales):
+        """Create recent activity feed"""
+        from datetime import datetime, timedelta
+        
+        activity_frame = QFrame()
+        activity_frame.setStyleSheet("""
+            QFrame {
+                background: white;
+                border: 1px solid #e5e7eb;
+                border-radius: 8px;
+                padding: 15px;
+            }
+        """)
+        
+        activity_layout = QVBoxLayout()
+        activity_frame.setLayout(activity_layout)
+        
+        # Get recent sales (last 5)
+        recent_sales = sorted(sales, key=lambda x: x[2], reverse=True)[:5] if sales else []
+        
+        if not recent_sales:
+            no_activity = QLabel("No recent activity")
+            no_activity.setStyleSheet("color: #9ca3af; font-style: italic;")
+            activity_layout.addWidget(no_activity)
+        else:
+            for sale in recent_sales:
+                activity_item = QWidget()
+                item_layout = QHBoxLayout()
+                activity_item.setLayout(item_layout)
+                item_layout.setContentsMargins(0, 5, 0, 5)
+                
+                # Icon based on status
+                status = sale[6]
+                if status == 'Completed':
+                    icon = "✅"
+                    color = "#10b981"
+                elif status == 'Pending':
+                    icon = "⏳"
+                    color = "#f59e0b"
+                else:
+                    icon = "❌"
+                    color = "#ef4444"
+                
+                icon_label = QLabel(icon)
+                icon_label.setFont(QFont("Segoe UI", 14))
+                item_layout.addWidget(icon_label)
+                
+                # Activity text
+                text = f"<b>{sale[3]}</b> - Invoice #{sale[1]} - <span style='color:{color}'>{status}</span>"
+                activity_text = QLabel(text)
+                activity_text.setFont(QFont("Segoe UI", 10))
+                item_layout.addWidget(activity_text)
+                
+                item_layout.addStretch()
+                
+                # Amount
+                amount_label = QLabel(f"${sale[4]:,.2f}")
+                amount_label.setFont(QFont("Segoe UI", 10, QFont.Bold))
+                amount_label.setStyleSheet(f"color: {color};")
+                item_layout.addWidget(amount_label)
+                
+                # Date
+                date_label = QLabel(sale[2])
+                date_label.setFont(QFont("Segoe UI", 9))
+                date_label.setStyleSheet("color: #9ca3af;")
+                item_layout.addWidget(date_label)
+                
+                activity_layout.addWidget(activity_item)
+                
+                # Separator
+                if sale != recent_sales[-1]:
+                    separator = QFrame()
+                    separator.setFrameShape(QFrame.HLine)
+                    separator.setStyleSheet("background: #e5e7eb;")
+                    activity_layout.addWidget(separator)
+        
+        return activity_frame
+    
+    def create_business_insights(self, products, sales, customers):
+        """Create business insights panel"""
+        from modules.inventory_manager import InventoryManager
+        
+        insights_frame = QFrame()
+        insights_frame.setStyleSheet("""
+            QFrame {
+                background: white;
+                border: 1px solid #e5e7eb;
+                border-radius: 8px;
+                padding: 15px;
+            }
+        """)
+        
+        insights_layout = QVBoxLayout()
+        insights_frame.setLayout(insights_layout)
+        
+        # Calculate insights
+        inventory = InventoryManager()
+        low_stock = inventory.get_low_stock_items()
+        
+        # Profit calculation
+        total_cost = sum(p[4] * p[6] for p in products)  # wholesale * stock
+        total_retail = sum(p[5] * p[6] for p in products)  # retail * stock
+        potential_profit = total_retail - total_cost
+        
+        # Average sale value
+        avg_sale = sum(s[4] for s in sales) / len(sales) if sales else 0
+        
+        # Insights list
+        insights = []
+        
+        # Low stock alert
+        if low_stock:
+            insights.append({
+                'icon': '⚠️',
+                'color': '#f59e0b',
+                'title': 'Low Stock Alert',
+                'text': f'{len(low_stock)} products need reordering',
+                'action': 'View Inventory'
+            })
+        
+        # Pending orders
+        pending = sum(1 for s in sales if s[6] == 'Pending')
+        if pending > 0:
+            insights.append({
+                'icon': '📦',
+                'color': '#ef4444',
+                'title': 'Pending Orders',
+                'text': f'{pending} orders awaiting processing',
+                'action': 'View Sales'
+            })
+        
+        # Inventory value
+        insights.append({
+            'icon': '💰',
+            'color': '#10b981',
+            'title': 'Inventory Value',
+            'text': f'${total_retail:,.2f} retail value (${potential_profit:,.2f} potential profit)',
+            'action': None
+        })
+        
+        # Average sale
+        if avg_sale > 0:
+            insights.append({
+                'icon': '📊',
+                'color': '#3b82f6',
+                'title': 'Average Sale',
+                'text': f'${avg_sale:,.2f} per transaction',
+                'action': None
+            })
+        
+        # Customer growth
+        insights.append({
+            'icon': '👥',
+            'color': '#8b5cf6',
+            'title': 'Customer Base',
+            'text': f'{len(customers)} registered customers',
+            'action': 'View Customers'
+        })
+        
+        # Display insights
+        for insight in insights:
+            insight_item = QWidget()
+            item_layout = QHBoxLayout()
+            insight_item.setLayout(item_layout)
+            item_layout.setContentsMargins(0, 8, 0, 8)
+            
+            # Icon
+            icon_label = QLabel(insight['icon'])
+            icon_label.setFont(QFont("Segoe UI", 16))
+            item_layout.addWidget(icon_label)
+            
+            # Content
+            content_layout = QVBoxLayout()
+            content_layout.setSpacing(2)
+            
+            title_label = QLabel(insight['title'])
+            title_label.setFont(QFont("Segoe UI", 11, QFont.Bold))
+            title_label.setStyleSheet(f"color: {insight['color']};")
+            content_layout.addWidget(title_label)
+            
+            text_label = QLabel(insight['text'])
+            text_label.setFont(QFont("Segoe UI", 9))
+            text_label.setStyleSheet("color: #6b7280;")
+            text_label.setWordWrap(True)
+            content_layout.addWidget(text_label)
+            
+            item_layout.addLayout(content_layout)
+            item_layout.addStretch()
+            
+            # Action button if available
+            if insight['action']:
+                action_btn = QPushButton(insight['action'])
+                action_btn.setFont(QFont("Segoe UI", 9))
+                action_btn.setStyleSheet("""
+                    QPushButton {
+                        background: #f3f4f6;
+                        color: #1f2937;
+                        border: none;
+                        padding: 5px 15px;
+                        border-radius: 4px;
+                    }
+                    QPushButton:hover {
+                        background: #e5e7eb;
+                    }
+                """)
+                
+                # Connect to appropriate tab
+                if insight['action'] == 'View Inventory':
+                    action_btn.clicked.connect(lambda: self.tabs.setCurrentIndex(1))
+                elif insight['action'] == 'View Sales':
+                    action_btn.clicked.connect(lambda: self.tabs.setCurrentIndex(2))
+                elif insight['action'] == 'View Customers':
+                    action_btn.clicked.connect(lambda: self.tabs.setCurrentIndex(4))
+                
+                item_layout.addWidget(action_btn)
+            
+            insights_layout.addWidget(insight_item)
+            
+            # Separator
+            if insight != insights[-1]:
+                separator = QFrame()
+                separator.setFrameShape(QFrame.HLine)
+                separator.setStyleSheet("background: #e5e7eb;")
+                insights_layout.addWidget(separator)
+        
+        return insights_frame
+    
+    def refresh_dashboard(self):
+        """Refresh dashboard data"""
+        # Recreate dashboard tab
+        new_dashboard = self.create_dashboard()
+        self.tabs.removeTab(0)
+        self.tabs.insertTab(0, new_dashboard, "📊 Dashboard")
+        self.tabs.setCurrentIndex(0)
     
     def show_about(self):
         """Show about dialog"""
